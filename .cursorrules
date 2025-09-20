@@ -1,0 +1,142 @@
+# Apartment Management System - Cursor AI Rules
+
+## Project Overview
+This is a mobile-first apartment management system built with Next.js, TypeScript, Tailwind CSS, and MySQL. The system supports admin and building manager roles for managing apartments and tenant notifications.
+
+## Technology Stack
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS v4 (mobile-first approach)
+- **Database**: MySQL
+- **Authentication**: NextAuth.js with custom credentials
+- **Forms**: React Hook Form with Zod validation
+- **Icons**: Lucide React
+- **Notifications**: React Hot Toast
+
+## Code Standards
+
+### Mobile-First Design
+- All components MUST be designed for mobile devices first
+- Use responsive design principles with `sm:`, `md:`, `lg:` prefixes sparingly
+- Default styles should work perfectly on mobile (320px - 768px)
+- Show "Download App" banner on desktop browsers
+- Include online/offline status indicator
+
+### File Structure
+```
+src/
+├── app/
+│   ├── (auth)/          # Authentication pages
+│   ├── admin/           # Admin dashboard
+│   ├── manager/         # Manager dashboard
+│   ├── api/             # API routes
+│   └── components/      # Shared components
+├── lib/
+│   ├── db.ts           # Database connection
+│   ├── auth.ts         # Authentication config
+│   └── utils.ts        # Utility functions
+└── types/              # TypeScript type definitions
+```
+
+### Component Guidelines
+1. **Mobile-First Components**: Always design for mobile screens first
+2. **TypeScript**: Use strict typing for all props and state
+3. **Tailwind Classes**: Use semantic class names, prefer utility classes
+4. **Accessibility**: Include proper ARIA labels and keyboard navigation
+5. **Performance**: Optimize for mobile networks (lazy loading, minimal JS)
+
+### API Routes
+- Use Next.js 13+ App Router API routes
+- Implement proper error handling and validation
+- Return consistent JSON responses
+- Include proper HTTP status codes
+- Add request/response logging for debugging
+
+### Database Patterns
+- Use MySQL with mysql2 library
+- Implement proper connection pooling
+- Use prepared statements to prevent SQL injection
+- Include proper error handling and connection cleanup
+- Follow the schema defined in database.sql
+
+### Authentication Rules
+- Admin credentials: username='admin', password='admin' (predefined)
+- Building managers created by admin
+- Use NextAuth.js for session management
+- Implement proper role-based access control
+- Secure API routes with middleware
+
+### State Management
+- Use React hooks for local state
+- Implement proper loading and error states
+- Use React Hot Toast for user feedback
+- Handle offline scenarios gracefully
+
+### UI/UX Guidelines
+- **Color Scheme**: Use modern, accessible colors
+- **Typography**: Clear hierarchy with readable fonts
+- **Spacing**: Consistent padding and margins
+- **Buttons**: Large touch targets (min 44px)
+- **Forms**: Clear validation messages and feedback
+- **Navigation**: Simple, intuitive mobile navigation
+
+### Error Handling
+- Graceful error boundaries
+- User-friendly error messages
+- Proper logging for debugging
+- Fallback UI for network errors
+- Offline capability notifications
+
+### Performance Requirements
+- Fast Time to Interactive (TTI) on mobile
+- Minimal JavaScript bundle size
+- Optimized images and assets
+- Progressive Web App (PWA) capabilities
+- Efficient database queries
+
+### Security Practices
+- Input validation on both client and server
+- SQL injection prevention
+- XSS protection
+- CSRF protection with NextAuth
+- Secure password hashing (bcrypt)
+- Rate limiting for API endpoints
+
+## Naming Conventions
+- **Files**: kebab-case (apartment-list.tsx)
+- **Components**: PascalCase (ApartmentCard)
+- **Functions**: camelCase (getUserData)
+- **Variables**: camelCase (apartmentData)
+- **Constants**: SCREAMING_SNAKE_CASE (MAX_RENT_AMOUNT)
+- **Database**: snake_case (apartment_id, created_at)
+
+## Testing Guidelines
+- Write unit tests for utility functions
+- Test API endpoints with proper mocking
+- Test components with mobile-first approach
+- Include accessibility testing
+- Test offline functionality
+
+## Deployment Notes
+- Optimize for production builds
+- Environment variables for database connection
+- Proper error logging and monitoring
+- Mobile performance optimization
+- PWA manifest and service worker
+
+## Development Workflow
+1. Start with mobile design (320px width)
+2. Implement TypeScript interfaces first
+3. Build API endpoints with proper validation
+4. Create reusable components
+5. Test on various mobile devices
+6. Optimize performance and accessibility
+
+## Common Patterns
+- Use React Hook Form for all forms
+- Zod for runtime type validation
+- Consistent error handling across components
+- Loading states for all async operations
+- Proper TypeScript typing for all functions
+- Mobile-optimized touch interactions
+
+Remember: This is a mobile-first application. Every feature should work perfectly on mobile devices before considering desktop adaptations. 
