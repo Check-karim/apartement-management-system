@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS maintenance_requests (
 -- Insert default admin user
 -- Password: 'admin' (bcrypt hashed)
 INSERT INTO users (username, password, role, full_name, email, phone) 
-VALUES ('admin', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6ukRXrTDlG', 'admin', 'System Administrator', 'admin@ams.com', '1234567890')
+VALUES ('admin', '$2a$12$ahjGV9dDxGPFhJeZLgLlIOsJaZp4wimriac8texvR5ArIT9joeC3i', 'admin', 'System Administrator', 'admin@ams.com', '1234567890')
 ON DUPLICATE KEY UPDATE username = username;
 
 -- Create indexes for better performance
@@ -131,7 +131,7 @@ CREATE INDEX idx_maintenance_priority ON maintenance_requests(priority);
 -- Sample data for testing (optional)
 -- Insert a sample building manager
 INSERT INTO users (username, password, role, full_name, email, phone) 
-VALUES ('manager1', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6ukRXrTDlG', 'manager', 'John Manager', 'manager@building1.com', '9876543210')
+VALUES ('manager1', '$2a$12$ahjGV9dDxGPFhJeZLgLlIOsJaZp4wimriac8texvR5ArIT9joeC3i', 'manager', 'John Manager', 'manager@building1.com', '9876543210')
 ON DUPLICATE KEY UPDATE username = username;
 
 -- Insert sample buildings
