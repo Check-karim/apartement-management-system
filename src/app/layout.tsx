@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import { MobileHeader } from "./components/mobile-header";
+import { ConditionalHeader } from "./components/conditional-header";
 import { AppInstallBanner } from "./components/app-install-banner";
 import { Toaster } from "react-hot-toast";
 
@@ -55,7 +55,7 @@ export default function RootLayout({
       >
         <Providers>
           <div className="flex flex-col min-h-screen">
-            <MobileHeader />
+            <ConditionalHeader />
             <AppInstallBanner />
             <main className="flex-1 pb-safe">
               {children}
