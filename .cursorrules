@@ -27,8 +27,15 @@ src/
 ├── app/
 │   ├── (auth)/          # Authentication pages
 │   ├── admin/           # Admin dashboard
+│   │   └── managers/    # Manager management
+│   │       ├── create/  # Create new manager
+│   │       └── [id]/    # Edit existing manager
 │   ├── manager/         # Manager dashboard
 │   ├── api/             # API routes
+│   │   └── users/
+│   │       └── managers/
+│   │           ├── route.ts      # List/Create managers
+│   │           └── [id]/route.ts # Get/Update/Delete individual manager
 │   └── components/      # Shared components
 ├── lib/
 │   ├── db.ts           # Database connection
@@ -60,10 +67,13 @@ src/
 
 ### Authentication Rules
 - Admin credentials: username='admin', password='admin' (predefined)
-- Building managers created by admin
+- Building managers created and managed by admin
 - Use NextAuth.js for session management
 - Implement proper role-based access control
 - Secure API routes with middleware
+- Manager CRUD operations (Create, Read, Update, Delete) admin-only
+- Password updates optional (leave blank to keep current)
+- Account activation/deactivation toggle for managers
 
 ### State Management
 - Use React hooks for local state
@@ -78,6 +88,10 @@ src/
 - **Buttons**: Large touch targets (min 44px)
 - **Forms**: Clear validation messages and feedback
 - **Navigation**: Simple, intuitive mobile navigation
+- **Input Fields**: Dark text (`text-gray-900`) with visible placeholders (`placeholder-gray-500`)
+- **Form Layout**: Mobile-first with proper spacing and touch-friendly controls
+- **Loading States**: Spinner animations for async operations
+- **Error Handling**: Toast notifications with proper color coding
 
 ### Error Handling
 - Graceful error boundaries
@@ -133,10 +147,14 @@ src/
 
 ## Common Patterns
 - Use React Hook Form for all forms
-- Zod for runtime type validation
+- Zod for runtime type validation with zodResolver
 - Consistent error handling across components
 - Loading states for all async operations
 - Proper TypeScript typing for all functions
 - Mobile-optimized touch interactions
+- Input text visibility: use `text-gray-900 placeholder-gray-500` classes
+- RESTful API design with proper HTTP status codes
+- Dynamic routes with Next.js App Router: `[id]/page.tsx`
+- Form validation on both client and server side
 
 Remember: This is a mobile-first application. Every feature should work perfectly on mobile devices before considering desktop adaptations. 

@@ -12,7 +12,8 @@ The Apartment Management System is designed specifically for mobile devices whil
 ## ✨ Features
 
 ### Core Functionality
-- **User Management**: Admin can create, update, and manage building manager accounts
+- **User Management**: Admin can create, edit, update, and delete building manager accounts
+- **Manager Editing**: Full CRUD operations for building manager profiles with validation
 - **Building Management**: Add and manage multiple buildings with assigned managers
 - **Apartment Registration**: Complete apartment management with tenant information
 - **Notification System**: Send notifications about rent, maintenance, and general updates
@@ -107,7 +108,8 @@ This application is built with a mobile-first approach:
 - **Username**: `admin` (predefined)
 - **Password**: `admin` (change in production)
 - **Permissions**:
-  - Create, update, delete building manager accounts
+  - Create, edit, update, and delete building manager accounts
+  - Manage manager profiles (username, email, phone, password, active status)
   - View all buildings and apartments
   - Manage system-wide settings
   - Send notifications to all buildings
@@ -151,8 +153,15 @@ src/
 ├── app/
 │   ├── (auth)/          # Authentication pages
 │   ├── admin/           # Admin dashboard and pages
+│   │   └── managers/    # Manager management
+│   │       ├── create/  # Create new manager
+│   │       └── [id]/    # Edit existing manager
 │   ├── manager/         # Manager dashboard and pages
 │   ├── api/             # API routes
+│   │   └── users/
+│   │       └── managers/
+│   │           ├── route.ts      # List/Create managers
+│   │           └── [id]/route.ts # Get/Update/Delete individual manager
 │   └── components/      # Shared components
 ├── lib/
 │   ├── db.ts           # Database connection
@@ -217,6 +226,9 @@ NEXTAUTH_URL=https://your-domain.com
 ### User Management (Admin only)
 - `GET /api/users/managers` - Get all building managers
 - `POST /api/users/managers` - Create new building manager
+- `GET /api/users/managers/[id]` - Get specific building manager
+- `PUT /api/users/managers/[id]` - Update building manager
+- `DELETE /api/users/managers/[id]` - Delete building manager
 
 ### Building Management
 - `GET /api/buildings` - Get buildings (filtered by role)
@@ -263,7 +275,17 @@ This project is built for apartment management and property administration. Plea
 
 **Mobile-First Apartment Management System** - Built with Next.js, TypeScript, and MySQL for modern property management.
 
-## ✅ Fixed Issues
+## ✅ Recent Updates & Fixed Issues
+
+### Manager Management System (Latest)
+- ✅ **Edit Manager Functionality** - Complete CRUD operations for building managers
+- ✅ **Manager Create Page** - `/admin/managers/create` with form validation
+- ✅ **Manager Edit Page** - `/admin/managers/[id]` with update/delete capabilities
+- ✅ **API Endpoints** - RESTful API for manager operations (GET, PUT, DELETE)
+- ✅ **Input Visibility Fixed** - Dark text with proper contrast for all form fields
+- ✅ **Mobile-First Design** - Touch-optimized forms with proper validation
+- ✅ **Security Features** - Password updates, account activation, role-based access
+- ✅ **Type Safety** - Complete TypeScript integration with Zod validation
 
 ### Login Page
 - ✅ **Hamburger menu hidden** on login page

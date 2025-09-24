@@ -26,6 +26,15 @@ export interface CreateUserData {
   role: 'manager';
 }
 
+export interface UpdateUserData {
+  username?: string;
+  password?: string;
+  full_name?: string;
+  email?: string;
+  phone?: string;
+  is_active?: boolean;
+}
+
 // Building Types
 export interface Building {
   id: number;
