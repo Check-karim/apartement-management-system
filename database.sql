@@ -341,6 +341,48 @@ FROM rent_payments
 GROUP BY DATE_FORMAT(payment_date, '%Y-%m')
 ORDER BY month DESC;
 
+-- Triggers for automatic apartment count updates
+-- These triggers ensure the buildings.total_apartments field stays synchronized
+-- They work alongside API route updates for redundancy and data consistency
+DELIMITER $$
+
+CREATE TRIGGER IF NOT EXISTS after_apartment_insert
+AFTER INSERT ON apartments
+FOR EACH ROW
+BEGIN
+    UPDATE buildings 
+    SET total_apartments = (SELECT COUNT(*) FROM apartments WHERE building_id = NEW.building_id)
+    WHERE id = NEW.building_id;
+END$$
+
+CREATE TRIGGER IF NOT EXISTS after_apartment_delete
+AFTER DELETE ON apartments
+FOR EACH ROW
+BEGIN
+    UPDATE buildings 
+    SET total_apartments = (SELECT COUNT(*) FROM apartments WHERE building_id = OLD.building_id)
+    WHERE id = OLD.building_id;
+END$$
+
+CREATE TRIGGER IF NOT EXISTS after_apartment_update
+AFTER UPDATE ON apartments
+FOR EACH ROW
+BEGIN
+    -- Update old building if building changed
+    IF OLD.building_id != NEW.building_id THEN
+        UPDATE buildings 
+        SET total_apartments = (SELECT COUNT(*) FROM apartments WHERE building_id = OLD.building_id)
+        WHERE id = OLD.building_id;
+        
+        -- Update new building
+        UPDATE buildings 
+        SET total_apartments = (SELECT COUNT(*) FROM apartments WHERE building_id = NEW.building_id)
+        WHERE id = NEW.building_id;
+    END IF;
+END$$
+
+DELIMITER ;
+
 -- Grant necessary permissions (adjust as needed for your setup)
 -- GRANT SELECT, INSERT, UPDATE, DELETE ON apartment_management_system.* TO 'your_app_user'@'localhost';
 

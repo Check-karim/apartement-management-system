@@ -103,6 +103,14 @@ export default function AdminDashboard() {
           bgColor: "bg-green-50",
           route: "/admin/buildings",
         },
+        {
+          icon: Home,
+          label: "Apartments",
+          description: `${stats.totalApartments} units`,
+          color: "text-indigo-600",
+          bgColor: "bg-indigo-50",
+          route: "/admin/apartments",
+        },
       ],
     },
     {

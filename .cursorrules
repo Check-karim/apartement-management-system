@@ -25,23 +25,95 @@ This is a mobile-first apartment management system built with Next.js, TypeScrip
 ```
 src/
 ├── app/
-│   ├── (auth)/          # Authentication pages
-│   ├── admin/           # Admin dashboard
-│   │   └── managers/    # Manager management
-│   │       ├── create/  # Create new manager
-│   │       └── [id]/    # Edit existing manager
-│   ├── manager/         # Manager dashboard
-│   ├── api/             # API routes
-│   │   └── users/
-│   │       └── managers/
-│   │           ├── route.ts      # List/Create managers
-│   │           └── [id]/route.ts # Get/Update/Delete individual manager
-│   └── components/      # Shared components
+│   ├── (auth)/                    # Authentication pages
+│   │   └── login/
+│   │       └── page.tsx
+│   ├── admin/                     # Admin dashboard
+│   │   ├── page.tsx               # Main dashboard
+│   │   ├── managers/              # Manager management
+│   │   │   ├── page.tsx           # List all managers
+│   │   │   ├── create/            # Create new manager
+│   │   │   │   └── page.tsx
+│   │   │   └── [id]/              # Edit existing manager
+│   │   │       └── page.tsx
+│   │   ├── buildings/             # Building management
+│   │   │   ├── page.tsx           # List all buildings
+│   │   │   ├── create/            # Create new building
+│   │   │   │   └── page.tsx
+│   │   │   └── [id]/              # Building details & edit
+│   │   │       ├── page.tsx       # Building details
+│   │   │       └── edit/
+│   │   │           └── page.tsx   # Edit building
+│   │   ├── apartments/            # Apartment management
+│   │   │   ├── page.tsx           # List all apartments
+│   │   │   ├── create/            # Create new apartment
+│   │   │   │   └── page.tsx
+│   │   │   └── [id]/              # Apartment details & edit
+│   │   │       ├── page.tsx       # Apartment details
+│   │   │       └── edit/
+│   │   │           └── page.tsx   # Edit apartment
+│   │   ├── reports/               # Reports section
+│   │   │   ├── page.tsx           # Reports hub
+│   │   │   ├── bills/
+│   │   │   │   └── page.tsx       # Bill reports
+│   │   │   ├── payments/
+│   │   │   │   └── page.tsx       # Payment reports
+│   │   │   ├── apartments/
+│   │   │   │   └── page.tsx       # Apartment reports
+│   │   │   └── buildings/
+│   │   │       └── page.tsx       # Building reports
+│   │   ├── notifications/         # Notifications section
+│   │   │   ├── page.tsx           # Notifications hub
+│   │   │   ├── maintenance/
+│   │   │   │   └── page.tsx       # Maintenance notifications
+│   │   │   ├── water/
+│   │   │   │   └── page.tsx       # Water notifications
+│   │   │   └── compound/
+│   │   │       └── page.tsx       # Compound notifications
+│   │   ├── settings/              # Settings section
+│   │   │   ├── page.tsx           # Settings hub
+│   │   │   ├── currency/
+│   │   │   │   └── page.tsx       # Currency settings
+│   │   │   └── water-formula/
+│   │   │       └── page.tsx       # Water formula settings
+│   │   └── profile/               # Profile management
+│   │       └── page.tsx           # Admin profile
+│   ├── manager/                   # Manager dashboard
+│   │   └── page.tsx
+│   ├── api/                       # API routes
+│   │   ├── auth/
+│   │   │   └── [...nextauth]/
+│   │   │       └── route.ts       # NextAuth configuration
+│   │   ├── users/
+│   │   │   └── managers/
+│   │   │       ├── route.ts       # List/Create managers
+│   │   │       └── [id]/
+│   │   │           └── route.ts   # Get/Update/Delete individual manager
+│   │   ├── buildings/
+│   │   │   ├── route.ts           # List/Create buildings
+│   │   │   └── [id]/
+│   │   │       └── route.ts       # Get/Update/Delete individual building
+│   │   ├── apartments/
+│   │   │   ├── route.ts           # List/Create apartments
+│   │   │   └── [id]/
+│   │   │       └── route.ts       # Get/Update/Delete individual apartment
+│   │   └── currencies/
+│   │       ├── route.ts           # List/Create currencies
+│   │       └── [id]/
+│   │           └── route.ts       # Get/Update/Delete individual currency
+│   ├── components/                # Shared components
+│   │   ├── mobile-header.tsx
+│   │   ├── conditional-header.tsx
+│   │   └── app-install-banner.tsx
+│   ├── layout.tsx                 # Root layout
+│   ├── page.tsx                   # Home page
+│   ├── providers.tsx              # Context providers
+│   └── globals.css                # Global styles
 ├── lib/
-│   ├── db.ts           # Database connection
-│   ├── auth.ts         # Authentication config
-│   └── utils.ts        # Utility functions
-└── types/              # TypeScript type definitions
+│   ├── db.ts                      # Database connection
+│   └── auth.ts                    # Authentication config
+└── types/
+    └── index.ts                   # TypeScript type definitions
 ```
 
 ### Component Guidelines
@@ -57,6 +129,12 @@ src/
 - Return consistent JSON responses
 - Include proper HTTP status codes
 - Add request/response logging for debugging
+- **Authentication**: `/api/auth/[...nextauth]` - NextAuth.js configuration
+- **Manager CRUD**: `/api/users/managers` (GET, POST) and `/api/users/managers/[id]` (GET, PUT, DELETE)
+- **Building CRUD**: `/api/buildings` (GET, POST) and `/api/buildings/[id]` (GET, PUT, DELETE)
+- **Apartment CRUD**: `/api/apartments` (GET, POST) and `/api/apartments/[id]` (GET, PUT, DELETE)
+- **Currency CRUD**: `/api/currencies` (GET, POST) and `/api/currencies/[id]` (GET, PUT, DELETE)
+- All endpoints support filtering via query parameters (e.g., `?building_id=1`)
 
 ### Database Patterns
 - Use MySQL with mysql2 library
@@ -64,6 +142,8 @@ src/
 - Use prepared statements to prevent SQL injection
 - Include proper error handling and connection cleanup
 - Follow the schema defined in database.sql
+- Database triggers automatically maintain `buildings.total_apartments` count
+- Triggers handle INSERT, UPDATE, and DELETE operations on apartments table
 
 ### Authentication Rules
 - Admin credentials: username='admin', password='admin' (predefined)
@@ -152,7 +232,7 @@ The admin interface follows a modern card-based design with the following sectio
 - Gradient header with welcome message
 - 4 stat cards: Managers, Buildings, Apartments, Occupancy Rate
 - Navigation menu organized by sections:
-  - **Management**: Managers & Buildings
+  - **Management**: Managers, Buildings & Apartments
   - **Reports & Analytics**: All report types
   - **Communication**: Notifications
   - **Settings**: Currency, Water Formula, General
@@ -168,6 +248,12 @@ The admin interface follows a modern card-based design with the following sectio
 - **Create Page** (`/admin/buildings/create`): Add new building with manager assignment
 - **Details Page** (`/admin/buildings/[id]`): Full building info, apartment list, quick actions
 - **Edit Page** (`/admin/buildings/[id]/edit`): Update building information
+
+### Apartment Management
+- **List Page** (`/admin/apartments`): Search, multi-filter (building, occupancy), view all units
+- **Create Page** (`/admin/apartments/create`): Add new apartment with optional tenant info
+- **Details Page** (`/admin/apartments/[id]`): Complete apartment and tenant information
+- **Edit Page** (`/admin/apartments/[id]/edit`): Update apartment and tenant details
 
 ### Reports Section
 - **Reports Hub** (`/admin/reports`): Navigation to all report types
@@ -215,5 +301,9 @@ The admin interface follows a modern card-based design with the following sectio
 - `building_performance` view for building analytics
 - `payment_analytics` view for payment reporting
 - Default settings for currency and water billing
+- Database triggers for automatic apartment count synchronization
+  - `after_apartment_insert`: Updates building count on new apartment
+  - `after_apartment_delete`: Updates building count on apartment deletion
+  - `after_apartment_update`: Handles building changes when apartment is moved
 
 Remember: This is a mobile-first application. Every feature should work perfectly on mobile devices before considering desktop adaptations. 
