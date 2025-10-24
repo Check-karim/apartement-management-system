@@ -246,8 +246,75 @@ BEGIN
 END //
 DELIMITER ;
 
+-- Admin Interface Settings Tables
+CREATE TABLE IF NOT EXISTS system_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_value TEXT,
+    setting_type ENUM('string', 'number', 'boolean', 'json') DEFAULT 'string',
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Insert default system settings
+INSERT INTO system_settings (setting_key, setting_value, setting_type, description) VALUES
+('currency_code', 'USD', 'string', 'Default currency code'),
+('currency_symbol', '$', 'string', 'Currency symbol'),
+('currency_position', 'before', 'string', 'Position of currency symbol (before/after)'),
+('currency_decimal_places', '2', 'number', 'Number of decimal places for currency'),
+('water_base_rate', '5.00', 'number', 'Base rate for water billing'),
+('water_per_unit_rate', '0.50', 'number', 'Per unit rate for water consumption'),
+('water_service_fee', '2.00', 'number', 'Service fee for water billing'),
+('notification_email_enabled', 'true', 'boolean', 'Enable email notifications'),
+('notification_sms_enabled', 'false', 'boolean', 'Enable SMS notifications')
+ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
+
+-- Create view for admin dashboard statistics
+CREATE OR REPLACE VIEW admin_dashboard_stats AS
+SELECT 
+    (SELECT COUNT(*) FROM users WHERE role = 'manager' AND is_active = TRUE) as total_managers,
+    (SELECT COUNT(*) FROM buildings) as total_buildings,
+    (SELECT COUNT(*) FROM apartments) as total_apartments,
+    (SELECT COUNT(*) FROM apartments WHERE is_occupied = TRUE) as occupied_apartments,
+    (SELECT ROUND((COUNT(*) * 100.0 / (SELECT COUNT(*) FROM apartments)), 2) 
+     FROM apartments WHERE is_occupied = TRUE) as occupancy_rate,
+    (SELECT SUM(rent_amount) FROM apartments WHERE is_occupied = TRUE) as total_monthly_revenue;
+
+-- Create view for building performance
+CREATE OR REPLACE VIEW building_performance AS
+SELECT 
+    b.id,
+    b.name,
+    b.address,
+    b.total_apartments,
+    COUNT(a.id) as actual_apartments,
+    COUNT(CASE WHEN a.is_occupied = TRUE THEN 1 END) as occupied_count,
+    ROUND((COUNT(CASE WHEN a.is_occupied = TRUE THEN 1 END) * 100.0 / COUNT(a.id)), 2) as occupancy_rate,
+    SUM(CASE WHEN a.is_occupied = TRUE THEN a.rent_amount ELSE 0 END) as monthly_revenue,
+    u.full_name as manager_name
+FROM buildings b
+LEFT JOIN apartments a ON b.id = a.building_id
+LEFT JOIN users u ON b.manager_id = u.id
+GROUP BY b.id, b.name, b.address, b.total_apartments, u.full_name;
+
+-- Create view for payment analytics
+CREATE OR REPLACE VIEW payment_analytics AS
+SELECT 
+    DATE_FORMAT(payment_date, '%Y-%m') as month,
+    COUNT(*) as total_payments,
+    SUM(amount) as total_amount,
+    AVG(amount) as average_payment,
+    COUNT(CASE WHEN payment_method = 'cash' THEN 1 END) as cash_payments,
+    COUNT(CASE WHEN payment_method = 'bank_transfer' THEN 1 END) as bank_transfer_payments,
+    COUNT(CASE WHEN payment_method = 'online' THEN 1 END) as online_payments,
+    COUNT(CASE WHEN payment_method = 'check' THEN 1 END) as check_payments
+FROM rent_payments
+GROUP BY DATE_FORMAT(payment_date, '%Y-%m')
+ORDER BY month DESC;
+
 -- Grant necessary permissions (adjust as needed for your setup)
 -- GRANT SELECT, INSERT, UPDATE, DELETE ON apartment_management_system.* TO 'your_app_user'@'localhost';
 
 -- Display setup completion message
-SELECT 'Database setup completed successfully!' as message; 
+SELECT 'Database setup completed successfully with admin interface support!' as message; 

@@ -145,6 +145,52 @@ src/
 5. Test on various mobile devices
 6. Optimize performance and accessibility
 
+## Admin Interface Structure
+The admin interface follows a modern card-based design with the following sections:
+
+### Main Dashboard (`/admin`)
+- Gradient header with welcome message
+- 4 stat cards: Managers, Buildings, Apartments, Occupancy Rate
+- Navigation menu organized by sections:
+  - **Management**: Managers & Buildings
+  - **Reports & Analytics**: All report types
+  - **Communication**: Notifications
+  - **Settings**: Currency, Water Formula, General
+  - **Profile**: Admin profile management
+
+### Manager Management
+- **List Page** (`/admin/managers`): Search, filter, view/edit/delete actions
+- **Create Page** (`/admin/managers/create`): Form with validation
+- **Edit Page** (`/admin/managers/[id]`): Update manager details
+
+### Building Management
+- **List Page** (`/admin/buildings`): Search, view building details
+- **Create Page** (`/admin/buildings/create`): Add new building with manager assignment
+- **Details Page** (`/admin/buildings/[id]`): Full building info, apartment list, quick actions
+- **Edit Page** (`/admin/buildings/[id]/edit`): Update building information
+
+### Reports Section
+- **Reports Hub** (`/admin/reports`): Navigation to all report types
+- **Bill Reports** (`/admin/reports/bills`): Date range filtering
+- **Payment Reports** (`/admin/reports/payments`): Payment analytics and stats
+- **Apartment Reports** (`/admin/reports/apartments`): Occupancy and revenue stats
+- **Building Reports** (`/admin/reports/buildings`): Building performance analytics
+
+### Notifications
+- **Notifications Hub** (`/admin/notifications`): 3 notification types
+- **Maintenance** (`/admin/notifications/maintenance`): Maintenance alerts with priority
+- **Water** (`/admin/notifications/water`): Water billing notifications
+- **Compound** (`/admin/notifications/compound`): General announcements
+
+### Settings
+- **Settings Hub** (`/admin/settings`): Navigation to settings
+- **Currency** (`/admin/settings/currency`): Currency configuration with live preview
+- **Water Formula** (`/admin/settings/water-formula`): Billing formula with calculation example
+
+### Profile Management
+- **Admin Profile** (`/admin/profile`): Two-tab interface (Profile Info & Security)
+- Update personal information and change password
+
 ## Common Patterns
 - Use React Hook Form for all forms
 - Zod for runtime type validation with zodResolver
@@ -156,5 +202,18 @@ src/
 - RESTful API design with proper HTTP status codes
 - Dynamic routes with Next.js App Router: `[id]/page.tsx`
 - Form validation on both client and server side
+- Card-based layouts with shadows and hover effects
+- Gradient backgrounds for headers and accent elements
+- Color-coded sections for easy navigation
+- Touch-friendly buttons (min 44px height)
+- Consistent spacing and typography
+- Toast notifications for user feedback
+
+## Database Enhancements
+- `system_settings` table for configuration management
+- `admin_dashboard_stats` view for dashboard statistics
+- `building_performance` view for building analytics
+- `payment_analytics` view for payment reporting
+- Default settings for currency and water billing
 
 Remember: This is a mobile-first application. Every feature should work perfectly on mobile devices before considering desktop adaptations. 

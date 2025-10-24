@@ -3,14 +3,17 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Plus, Users, Building, Home, TrendingUp, Search, Filter } from "lucide-react";
+import { 
+  Users, Building, Home, TrendingUp, 
+  FileText, Bell, Settings, DollarSign, 
+  Droplet, UserCircle, ChevronRight 
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { User, Building as BuildingType, Apartment } from "@/types";
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("overview");
   const [managers, setManagers] = useState<User[]>([]);
   const [buildings, setBuildings] = useState<BuildingType[]>([]);
   const [apartments, setApartments] = useState<Apartment[]>([]);
@@ -31,7 +34,6 @@ export default function AdminDashboard() {
     try {
       setIsLoading(true);
       
-      // Fetch managers, buildings, and apartments
       const [managersRes, buildingsRes, apartmentsRes] = await Promise.all([
         fetch("/api/users/managers"),
         fetch("/api/buildings"),
@@ -61,10 +63,10 @@ export default function AdminDashboard() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -78,235 +80,189 @@ export default function AdminDashboard() {
   };
 
   const occupancyRate = stats.totalApartments > 0 
-    ? Math.round((stats.occupiedApartments / stats.totalApartments) * 100)
+    ? Math.round((stats.occupiedApartments / stats.totalApartments) * 100) 
     : 0;
 
+  const menuSections = [
+    {
+      title: "Management",
+      items: [
+        {
+          icon: Users,
+          label: "Managers",
+          description: `${stats.totalManagers} managers`,
+          color: "text-blue-600",
+          bgColor: "bg-blue-50",
+          route: "/admin/managers",
+        },
+        {
+          icon: Building,
+          label: "Buildings",
+          description: `${stats.totalBuildings} buildings`,
+          color: "text-green-600",
+          bgColor: "bg-green-50",
+          route: "/admin/buildings",
+        },
+      ],
+    },
+    {
+      title: "Reports & Analytics",
+      items: [
+        {
+          icon: FileText,
+          label: "Reports",
+          description: "View all reports",
+          color: "text-purple-600",
+          bgColor: "bg-purple-50",
+          route: "/admin/reports",
+        },
+      ],
+    },
+    {
+      title: "Communication",
+      items: [
+        {
+          icon: Bell,
+          label: "Notifications",
+          description: "Manage notifications",
+          color: "text-orange-600",
+          bgColor: "bg-orange-50",
+          route: "/admin/notifications",
+        },
+      ],
+    },
+    {
+      title: "Settings",
+      items: [
+        {
+          icon: DollarSign,
+          label: "Currency",
+          description: "Currency settings",
+          color: "text-emerald-600",
+          bgColor: "bg-emerald-50",
+          route: "/admin/settings/currency",
+        },
+        {
+          icon: Droplet,
+          label: "Water Formula",
+          description: "Water billing formula",
+          color: "text-cyan-600",
+          bgColor: "bg-cyan-50",
+          route: "/admin/settings/water-formula",
+        },
+        {
+          icon: Settings,
+          label: "General Settings",
+          description: "System preferences",
+          color: "text-gray-600",
+          bgColor: "bg-gray-50",
+          route: "/admin/settings",
+        },
+      ],
+    },
+    {
+      title: "Profile",
+      items: [
+        {
+          icon: UserCircle,
+          label: "Admin Profile",
+          description: "View & edit profile",
+          color: "text-indigo-600",
+          bgColor: "bg-indigo-50",
+          route: "/admin/profile",
+        },
+      ],
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="px-4 py-4">
-          <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-sm text-gray-600">Welcome back, {session?.user.full_name}</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+        <div className="px-4 py-6">
+          <h1 className="text-2xl font-bold mb-1">Admin Dashboard</h1>
+          <p className="text-blue-100">Welcome back, {session?.user.full_name}</p>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="p-4">
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex items-center">
-              <Users className="w-8 h-8 text-blue-600 mr-3" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalManagers}</p>
-                <p className="text-sm text-gray-600">Managers</p>
+      <div className="p-4 -mt-8">
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="bg-white rounded-xl p-4 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <Users className="w-8 h-8 text-blue-600" />
+                <span className="text-xs font-medium text-gray-500 uppercase">Managers</span>
               </div>
+              <p className="text-3xl font-bold text-gray-900">{stats.totalManagers}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex items-center">
-              <Building className="w-8 h-8 text-green-600 mr-3" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalBuildings}</p>
-                <p className="text-sm text-gray-600">Buildings</p>
+          <div className="bg-white rounded-xl p-4 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <Building className="w-8 h-8 text-green-600" />
+                <span className="text-xs font-medium text-gray-500 uppercase">Buildings</span>
               </div>
+              <p className="text-3xl font-bold text-gray-900">{stats.totalBuildings}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex items-center">
-              <Home className="w-8 h-8 text-purple-600 mr-3" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalApartments}</p>
-                <p className="text-sm text-gray-600">Apartments</p>
+          <div className="bg-white rounded-xl p-4 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <Home className="w-8 h-8 text-purple-600" />
+                <span className="text-xs font-medium text-gray-500 uppercase">Apartments</span>
               </div>
+              <p className="text-3xl font-bold text-gray-900">{stats.totalApartments}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex items-center">
-              <TrendingUp className="w-8 h-8 text-orange-600 mr-3" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{occupancyRate}%</p>
-                <p className="text-sm text-gray-600">Occupancy</p>
+          <div className="bg-white rounded-xl p-4 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <TrendingUp className="w-8 h-8 text-orange-600" />
+                <span className="text-xs font-medium text-gray-500 uppercase">Occupancy</span>
               </div>
+              <p className="text-3xl font-bold text-gray-900">{occupancyRate}%</p>
             </div>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex bg-white rounded-lg shadow-sm mb-4 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab("overview")}
-            className={`px-4 py-3 text-sm font-medium whitespace-nowrap ${
-              activeTab === "overview"
-                ? "bg-blue-600 text-white"
-                : "text-gray-600 hover:text-gray-900"
-            } rounded-lg transition-colors`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveTab("managers")}
-            className={`px-4 py-3 text-sm font-medium whitespace-nowrap ${
-              activeTab === "managers"
-                ? "bg-blue-600 text-white"
-                : "text-gray-600 hover:text-gray-900"
-            } rounded-lg transition-colors`}
-          >
-            Managers
-          </button>
-          <button
-            onClick={() => setActiveTab("buildings")}
-            className={`px-4 py-3 text-sm font-medium whitespace-nowrap ${
-              activeTab === "buildings"
-                ? "bg-blue-600 text-white"
-                : "text-gray-600 hover:text-gray-900"
-            } rounded-lg transition-colors`}
-          >
-            Buildings
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === "overview" && (
-          <div className="space-y-4">
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                  <div>
-                    <p className="text-sm font-medium">System Statistics</p>
-                    <p className="text-xs text-gray-600">Current system overview</p>
-                  </div>
-                  <span className="text-xs text-gray-500">Live</span>
-                </div>
-                <div className="text-sm text-gray-600">
-                  <p>• {stats.totalManagers} building managers registered</p>
-                  <p>• {stats.totalBuildings} buildings managed</p>
-                  <p>• {stats.totalApartments} total apartments</p>
-                  <p>• {occupancyRate}% occupancy rate</p>
-                </div>
+        <div className="space-y-6">
+          {menuSections.map((section) => (
+            <div key={section.title}>
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3 px-1">
+                {section.title}
+              </h2>
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                {section.items.map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.label}
+                      onClick={() => router.push(item.route)}
+                      className={`w-full flex items-center p-4 hover:bg-gray-50 transition-colors ${
+                        index !== section.items.length - 1 ? "border-b border-gray-100" : ""
+                      }`}
+                    >
+                      <div className={`${item.bgColor} p-3 rounded-xl mr-4`}>
+                        <Icon className={`w-6 h-6 ${item.color}`} />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <h3 className="text-base font-semibold text-gray-900">{item.label}</h3>
+                        <p className="text-sm text-gray-500">{item.description}</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
 
-        {activeTab === "managers" && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Building Managers</h3>
-              <button
-                onClick={() => router.push("/admin/managers/create")}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Manager</span>
-              </button>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm">
-              {managers.length === 0 ? (
-                <div className="p-8 text-center">
-                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No managers yet</h3>
-                  <p className="text-gray-600 mb-4">Add your first building manager to get started.</p>
-                  <button
-                    onClick={() => router.push("/admin/managers/create")}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                  >
-                    Add Manager
-                  </button>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-200">
-                  {managers.map((manager) => (
-                    <div key={manager.id} className="p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h4 className="text-sm font-medium text-gray-900">{manager.full_name}</h4>
-                          <p className="text-sm text-gray-600">@{manager.username}</p>
-                          <p className="text-xs text-gray-500">{manager.email}</p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            manager.is_active
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}>
-                            {manager.is_active ? "Active" : "Inactive"}
-                          </span>
-                          <button
-                            onClick={() => router.push(`/admin/managers/${manager.id}`)}
-                            className="text-blue-600 text-sm hover:text-blue-800"
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === "buildings" && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Buildings</h3>
-              <button
-                onClick={() => router.push("/admin/buildings/create")}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Building</span>
-              </button>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm">
-              {buildings.length === 0 ? (
-                <div className="p-8 text-center">
-                  <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No buildings yet</h3>
-                  <p className="text-gray-600 mb-4">Add your first building to get started.</p>
-                  <button
-                    onClick={() => router.push("/admin/buildings/create")}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                  >
-                    Add Building
-                  </button>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-200">
-                  {buildings.map((building) => (
-                    <div key={building.id} className="p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h4 className="text-sm font-medium text-gray-900">{building.name}</h4>
-                          <p className="text-sm text-gray-600">{building.address}</p>
-                          <p className="text-xs text-gray-500">
-                            {building.total_apartments} apartments
-                            {building.manager && ` • Manager: ${building.manager.full_name}`}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => router.push(`/admin/buildings/${building.id}`)}
-                          className="text-blue-600 text-sm hover:text-blue-800"
-                        >
-                          View
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <div className="h-6"></div>
       </div>
     </div>
   );
-} 
+}
+
