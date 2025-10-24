@@ -7,7 +7,7 @@ import { Building } from "@/types";
 // GET /api/buildings/[id] - Get building by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,7 +19,8 @@ export async function GET(
       );
     }
 
-    const buildingId = parseInt(params.id);
+    const { id } = await params;
+    const buildingId = parseInt(id);
 
     if (isNaN(buildingId)) {
       return NextResponse.json(
@@ -71,7 +72,7 @@ export async function GET(
 // PUT /api/buildings/[id] - Update building
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -83,7 +84,8 @@ export async function PUT(
       );
     }
 
-    const buildingId = parseInt(params.id);
+    const { id } = await params;
+    const buildingId = parseInt(id);
 
     if (isNaN(buildingId)) {
       return NextResponse.json(
@@ -153,7 +155,7 @@ export async function PUT(
 // DELETE /api/buildings/[id] - Delete building
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -165,7 +167,8 @@ export async function DELETE(
       );
     }
 
-    const buildingId = parseInt(params.id);
+    const { id } = await params;
+    const buildingId = parseInt(id);
 
     if (isNaN(buildingId)) {
       return NextResponse.json(

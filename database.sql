@@ -257,6 +257,20 @@ CREATE TABLE IF NOT EXISTS system_settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- Currencies Table
+CREATE TABLE IF NOT EXISTS currencies (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(10) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    symbol VARCHAR(10) NOT NULL,
+    position ENUM('before', 'after') DEFAULT 'before',
+    decimal_places INT DEFAULT 2,
+    is_active BOOLEAN DEFAULT TRUE,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 -- Insert default system settings
 INSERT INTO system_settings (setting_key, setting_value, setting_type, description) VALUES
 ('currency_code', 'USD', 'string', 'Default currency code'),
@@ -269,6 +283,20 @@ INSERT INTO system_settings (setting_key, setting_value, setting_type, descripti
 ('notification_email_enabled', 'true', 'boolean', 'Enable email notifications'),
 ('notification_sms_enabled', 'false', 'boolean', 'Enable SMS notifications')
 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
+
+-- Insert default currencies
+INSERT INTO currencies (code, name, symbol, position, decimal_places, is_active, is_default) VALUES
+('USD', 'US Dollar', '$', 'before', 2, TRUE, TRUE),
+('EUR', 'Euro', '€', 'before', 2, TRUE, FALSE),
+('GBP', 'British Pound', '£', 'before', 2, TRUE, FALSE),
+('JPY', 'Japanese Yen', '¥', 'before', 0, TRUE, FALSE),
+('CAD', 'Canadian Dollar', 'C$', 'before', 2, TRUE, FALSE),
+('AUD', 'Australian Dollar', 'A$', 'before', 2, TRUE, FALSE),
+('CHF', 'Swiss Franc', 'CHF', 'before', 2, TRUE, FALSE),
+('CNY', 'Chinese Yuan', '¥', 'before', 2, TRUE, FALSE),
+('INR', 'Indian Rupee', '₹', 'before', 2, TRUE, FALSE),
+('MXN', 'Mexican Peso', '$', 'before', 2, TRUE, FALSE)
+ON DUPLICATE KEY UPDATE name = VALUES(name), symbol = VALUES(symbol);
 
 -- Create view for admin dashboard statistics
 CREATE OR REPLACE VIEW admin_dashboard_stats AS

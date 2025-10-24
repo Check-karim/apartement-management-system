@@ -8,7 +8,7 @@ import { User } from "@/types";
 // GET /api/users/managers/[id] - Get single manager
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -20,7 +20,8 @@ export async function GET(
       );
     }
 
-    const managerId = parseInt(params.id);
+    const { id } = await params;
+    const managerId = parseInt(id);
     
     if (isNaN(managerId)) {
       return NextResponse.json(
@@ -57,7 +58,7 @@ export async function GET(
 // PUT /api/users/managers/[id] - Update manager
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -69,7 +70,8 @@ export async function PUT(
       );
     }
 
-    const managerId = parseInt(params.id);
+    const { id } = await params;
+    const managerId = parseInt(id);
     
     if (isNaN(managerId)) {
       return NextResponse.json(
@@ -159,7 +161,7 @@ export async function PUT(
 // DELETE /api/users/managers/[id] - Delete manager
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -171,7 +173,8 @@ export async function DELETE(
       );
     }
 
-    const managerId = parseInt(params.id);
+    const { id } = await params;
+    const managerId = parseInt(id);
     
     if (isNaN(managerId)) {
       return NextResponse.json(

@@ -95,6 +95,39 @@ export interface CreateApartmentData {
   lease_end_date?: string;
 }
 
+// Currency Types
+export interface Currency {
+  id: number;
+  code: string;
+  name: string;
+  symbol: string;
+  position: 'before' | 'after';
+  decimal_places: number;
+  is_active: boolean;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCurrencyData {
+  code: string;
+  name: string;
+  symbol: string;
+  position: 'before' | 'after';
+  decimal_places: number;
+  is_active?: boolean;
+  is_default?: boolean;
+}
+
+export interface UpdateCurrencyData {
+  name?: string;
+  symbol?: string;
+  position?: 'before' | 'after';
+  decimal_places?: number;
+  is_active?: boolean;
+  is_default?: boolean;
+}
+
 // Notification Types
 export interface Notification {
   id: number;
