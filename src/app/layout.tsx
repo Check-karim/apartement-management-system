@@ -20,7 +20,6 @@ export const metadata: Metadata = {
   title: "Apartment Management System",
   description: "Mobile-first apartment management system for property managers and administrators",
   manifest: "/manifest.json",
-  themeColor: "#3b82f6",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

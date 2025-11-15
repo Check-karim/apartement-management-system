@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Save, Home, Building, DollarSign, Users } from "lucide-react";
+import { ArrowLeft, Save, Home, Building, DollarSign, Droplets } from "lucide-react";
 import toast from "react-hot-toast";
 import { Building as BuildingType } from "@/types";
 
@@ -17,17 +17,10 @@ const createApartmentSchema = z.object({
   floor_number: z.string().optional(),
   bedrooms: z.string().min(1, "Number of bedrooms is required"),
   bathrooms: z.string().min(1, "Number of bathrooms is required"),
+  kitchen: z.boolean(),
   rent_amount: z.string().min(1, "Rent amount is required"),
   deposit_amount: z.string().optional(),
-  square_feet: z.string().optional(),
-  // Tenant information (optional)
-  tenant_name: z.string().optional(),
-  tenant_phone: z.string().optional(),
-  tenant_email: z.string().email("Invalid email").optional().or(z.literal("")),
-  emergency_contact_name: z.string().optional(),
-  emergency_contact_phone: z.string().optional(),
-  lease_start_date: z.string().optional(),
-  lease_end_date: z.string().optional(),
+  water_meter_reading: z.string().min(1, "Water meter reading is required"),
 });
 
 type CreateApartmentFormData = z.infer<typeof createApartmentSchema>;
@@ -38,7 +31,6 @@ export default function CreateApartmentPage() {
   const searchParams = useSearchParams();
   const [buildings, setBuildings] = useState<BuildingType[]>([]);
   const [isCreating, setIsCreating] = useState(false);
-  const [showTenantInfo, setShowTenantInfo] = useState(false);
 
   const {
     register,
@@ -92,17 +84,11 @@ export default function CreateApartmentPage() {
           apartment_number: data.apartment_number,
           floor_number: data.floor_number ? parseInt(data.floor_number) : undefined,
           bedrooms: parseInt(data.bedrooms),
-          bathrooms: parseInt(data.bathrooms),
+          bathrooms: parseFloat(data.bathrooms),
+          kitchen: data.kitchen,
           rent_amount: parseFloat(data.rent_amount),
           deposit_amount: data.deposit_amount ? parseFloat(data.deposit_amount) : 0,
-          square_feet: data.square_feet ? parseInt(data.square_feet) : undefined,
-          tenant_name: data.tenant_name || undefined,
-          tenant_phone: data.tenant_phone || undefined,
-          tenant_email: data.tenant_email || undefined,
-          emergency_contact_name: data.emergency_contact_name || undefined,
-          emergency_contact_phone: data.emergency_contact_phone || undefined,
-          lease_start_date: data.lease_start_date || undefined,
-          lease_end_date: data.lease_end_date || undefined,
+          water_meter_reading: parseFloat(data.water_meter_reading),
         }),
       });
 
@@ -275,16 +261,15 @@ export default function CreateApartmentPage() {
               </div>
 
               <div>
-                <label htmlFor="square_feet" className="block text-sm font-medium text-gray-700 mb-1">
-                  Square Feet
+                <label className="flex items-center space-x-2">
+                  <input
+                    {...register("kitchen")}
+                    type="checkbox"
+                    defaultChecked={true}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-600"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Has Kitchen</span>
                 </label>
-                <input
-                  {...register("square_feet")}
-                  type="number"
-                  id="square_feet"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder-gray-500"
-                  placeholder="750"
-                />
               </div>
             </div>
           </div>
@@ -330,125 +315,31 @@ export default function CreateApartmentPage() {
             </div>
           </div>
 
-          {/* Tenant Information (Optional) */}
+          {/* Water Meter */}
           <div className="bg-white rounded-xl shadow-sm p-4">
-            <button
-              type="button"
-              onClick={() => setShowTenantInfo(!showTenantInfo)}
-              className="flex items-center justify-between w-full mb-4"
-            >
-              <div className="flex items-center space-x-3">
-                <Users className="w-5 h-5 text-purple-600" />
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Tenant Information (Optional)
-                </h2>
-              </div>
-              <span className="text-sm text-gray-600">
-                {showTenantInfo ? "Hide" : "Show"}
-              </span>
-            </button>
+            <div className="flex items-center space-x-3 mb-4">
+              <Droplets className="w-5 h-5 text-blue-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Water Meter</h2>
+            </div>
 
-            {showTenantInfo && (
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="tenant_name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Tenant Name
-                  </label>
-                  <input
-                    {...register("tenant_name")}
-                    type="text"
-                    id="tenant_name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder-gray-500"
-                    placeholder="John Doe"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="tenant_phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number
-                    </label>
-                    <input
-                      {...register("tenant_phone")}
-                      type="tel"
-                      id="tenant_phone"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder-gray-500"
-                      placeholder="+1234567890"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="tenant_email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Email
-                    </label>
-                    <input
-                      {...register("tenant_email")}
-                      type="email"
-                      id="tenant_email"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder-gray-500"
-                      placeholder="john@example.com"
-                    />
-                    {errors.tenant_email && (
-                      <p className="text-red-600 text-sm mt-1">{errors.tenant_email.message}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="emergency_contact_name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Emergency Contact
-                    </label>
-                    <input
-                      {...register("emergency_contact_name")}
-                      type="text"
-                      id="emergency_contact_name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder-gray-500"
-                      placeholder="Jane Doe"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="emergency_contact_phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      Emergency Phone
-                    </label>
-                    <input
-                      {...register("emergency_contact_phone")}
-                      type="tel"
-                      id="emergency_contact_phone"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder-gray-500"
-                      placeholder="+1234567890"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="lease_start_date" className="block text-sm font-medium text-gray-700 mb-1">
-                      Lease Start Date
-                    </label>
-                    <input
-                      {...register("lease_start_date")}
-                      type="date"
-                      id="lease_start_date"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="lease_end_date" className="block text-sm font-medium text-gray-700 mb-1">
-                      Lease End Date
-                    </label>
-                    <input
-                      {...register("lease_end_date")}
-                      type="date"
-                      id="lease_end_date"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+            <div>
+              <label htmlFor="water_meter_reading" className="block text-sm font-medium text-gray-700 mb-1">
+                Current Meter Reading (m³) *
+              </label>
+              <input
+                {...register("water_meter_reading")}
+                type="number"
+                id="water_meter_reading"
+                step="0.01"
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder-gray-500"
+                placeholder="0.00"
+              />
+              {errors.water_meter_reading && (
+                <p className="text-red-600 text-sm mt-1">{errors.water_meter_reading.message}</p>
+              )}
+              <p className="text-sm text-gray-500 mt-1">Enter the initial water meter reading in cubic meters</p>
+            </div>
           </div>
 
           {/* Actions */}

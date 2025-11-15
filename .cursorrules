@@ -251,9 +251,17 @@ The admin interface follows a modern card-based design with the following sectio
 
 ### Apartment Management
 - **List Page** (`/admin/apartments`): Search, multi-filter (building, occupancy), view all units
-- **Create Page** (`/admin/apartments/create`): Add new apartment with optional tenant info
+- **Create Page** (`/admin/apartments/create`): Add new apartment (unit number, floor, bedrooms, bathrooms, kitchen, rent, deposit, water meter reading). Apartments are created vacant; tenant info added via edit page.
 - **Details Page** (`/admin/apartments/[id]`): Complete apartment and tenant information
 - **Edit Page** (`/admin/apartments/[id]/edit`): Update apartment and tenant details
+
+### Apartment Data Model
+- **Required Fields**: building_id, apartment_number, bedrooms, bathrooms, kitchen, rent_amount, water_meter_reading
+- **Optional Fields**: floor_number, deposit_amount
+- **Tenant Fields** (managed via edit page): tenant_name, tenant_phone, tenant_email, emergency_contact_name, emergency_contact_phone, lease_start_date, lease_end_date, is_occupied
+- **Removed Fields**: square_feet (not needed for this system)
+- **Water Meter**: Tracks current water meter reading in cubic meters (m³) for billing purposes
+- **Kitchen**: Boolean field indicating if the apartment has a kitchen (default: true)
 
 ### Reports Section
 - **Reports Hub** (`/admin/reports`): Navigation to all report types

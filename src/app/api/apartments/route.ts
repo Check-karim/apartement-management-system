@@ -90,20 +90,14 @@ export async function POST(request: NextRequest) {
       floor_number,
       bedrooms,
       bathrooms,
+      kitchen,
       rent_amount,
       deposit_amount,
-      square_feet,
-      tenant_name,
-      tenant_phone,
-      tenant_email,
-      emergency_contact_name,
-      emergency_contact_phone,
-      lease_start_date,
-      lease_end_date,
+      water_meter_reading,
     } = body;
 
     // Validate required fields
-    if (!building_id || !apartment_number || !bedrooms || !bathrooms || !rent_amount) {
+    if (!building_id || !apartment_number || !bedrooms || !bathrooms || !rent_amount || water_meter_reading === undefined || kitchen === undefined) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
         { status: 400 }
@@ -138,35 +132,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine if apartment is occupied
-    const is_occupied = tenant_name ? true : false;
-
-    // Insert new apartment
+    // Insert new apartment (always vacant on creation)
     const result = await executeQuery(
       `INSERT INTO apartments (
-        building_id, apartment_number, floor_number, bedrooms, bathrooms,
-        rent_amount, deposit_amount, square_feet, is_occupied,
-        tenant_name, tenant_phone, tenant_email,
-        emergency_contact_name, emergency_contact_phone,
-        lease_start_date, lease_end_date
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        building_id, apartment_number, floor_number, bedrooms, bathrooms, kitchen,
+        rent_amount, deposit_amount, water_meter_reading, is_occupied
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         building_id,
         apartment_number,
         floor_number || null,
         bedrooms,
         bathrooms,
+        kitchen,
         rent_amount,
         deposit_amount || 0,
-        square_feet || null,
-        is_occupied,
-        tenant_name || null,
-        tenant_phone || null,
-        tenant_email || null,
-        emergency_contact_name || null,
-        emergency_contact_phone || null,
-        lease_start_date || null,
-        lease_end_date || null,
+        water_meter_reading,
+        false, // Always vacant on creation
       ]
     );
 

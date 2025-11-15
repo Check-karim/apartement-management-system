@@ -6,7 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Save, Home, Building, DollarSign, Users } from "lucide-react";
+import { ArrowLeft, Save, Home, Building, DollarSign, Users, Droplets } from "lucide-react";
 import toast from "react-hot-toast";
 import { Apartment, Building as BuildingType } from "@/types";
 
@@ -17,9 +17,10 @@ const editApartmentSchema = z.object({
   floor_number: z.string().optional(),
   bedrooms: z.string().min(1, "Number of bedrooms is required"),
   bathrooms: z.string().min(1, "Number of bathrooms is required"),
+  kitchen: z.boolean(),
   rent_amount: z.string().min(1, "Rent amount is required"),
   deposit_amount: z.string().optional(),
-  square_feet: z.string().optional(),
+  water_meter_reading: z.string().min(1, "Water meter reading is required"),
   // Tenant information (optional)
   tenant_name: z.string().optional(),
   tenant_phone: z.string().optional(),
@@ -98,9 +99,10 @@ export default function EditApartmentPage() {
         floor_number: apt.floor_number?.toString() || "",
         bedrooms: apt.bedrooms.toString(),
         bathrooms: apt.bathrooms.toString(),
+        kitchen: apt.kitchen,
         rent_amount: apt.rent_amount.toString(),
         deposit_amount: apt.deposit_amount.toString(),
-        square_feet: apt.square_feet?.toString() || "",
+        water_meter_reading: apt.water_meter_reading?.toString() || "0",
         tenant_name: apt.tenant_name || "",
         tenant_phone: apt.tenant_phone || "",
         tenant_email: apt.tenant_email || "",
@@ -136,10 +138,11 @@ export default function EditApartmentPage() {
           apartment_number: data.apartment_number,
           floor_number: data.floor_number ? parseInt(data.floor_number) : undefined,
           bedrooms: parseInt(data.bedrooms),
-          bathrooms: parseInt(data.bathrooms),
+          bathrooms: parseFloat(data.bathrooms),
+          kitchen: data.kitchen,
           rent_amount: parseFloat(data.rent_amount),
           deposit_amount: data.deposit_amount ? parseFloat(data.deposit_amount) : 0,
-          square_feet: data.square_feet ? parseInt(data.square_feet) : undefined,
+          water_meter_reading: parseFloat(data.water_meter_reading),
           tenant_name: data.tenant_name || undefined,
           tenant_phone: data.tenant_phone || undefined,
           tenant_email: data.tenant_email || undefined,
@@ -327,19 +330,14 @@ export default function EditApartmentPage() {
               </div>
 
               <div>
-                <label
-                  htmlFor="square_feet"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Square Feet
+                <label className="flex items-center space-x-2">
+                  <input
+                    {...register("kitchen")}
+                    type="checkbox"
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-600"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Has Kitchen</span>
                 </label>
-                <input
-                  {...register("square_feet")}
-                  type="number"
-                  id="square_feet"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder-gray-500"
-                  placeholder="750"
-                />
               </div>
             </div>
           </div>
@@ -388,6 +386,33 @@ export default function EditApartmentPage() {
                   placeholder="1200.00"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Water Meter */}
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="flex items-center space-x-3 mb-4">
+              <Droplets className="w-5 h-5 text-blue-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Water Meter</h2>
+            </div>
+
+            <div>
+              <label htmlFor="water_meter_reading" className="block text-sm font-medium text-gray-700 mb-1">
+                Current Meter Reading (m³) *
+              </label>
+              <input
+                {...register("water_meter_reading")}
+                type="number"
+                id="water_meter_reading"
+                step="0.01"
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder-gray-500"
+                placeholder="0.00"
+              />
+              {errors.water_meter_reading && (
+                <p className="text-red-600 text-sm mt-1">{errors.water_meter_reading.message}</p>
+              )}
+              <p className="text-sm text-gray-500 mt-1">Current water meter reading in cubic meters</p>
             </div>
           </div>
 

@@ -37,10 +37,11 @@ CREATE TABLE IF NOT EXISTS apartments (
     apartment_number VARCHAR(20) NOT NULL,
     floor_number INT,
     bedrooms INT DEFAULT 1,
-    bathrooms INT DEFAULT 1,
+    bathrooms DECIMAL(3, 1) DEFAULT 1,
+    kitchen BOOLEAN DEFAULT TRUE,
     rent_amount DECIMAL(10, 2) NOT NULL,
     deposit_amount DECIMAL(10, 2) DEFAULT 0,
-    square_feet INT,
+    water_meter_reading DECIMAL(10, 2) DEFAULT 0,
     is_occupied BOOLEAN DEFAULT FALSE,
     lease_start_date DATE,
     lease_end_date DATE,
@@ -142,17 +143,17 @@ VALUES
 ON DUPLICATE KEY UPDATE name = name;
 
 -- Insert sample apartments
-INSERT INTO apartments (building_id, apartment_number, floor_number, bedrooms, bathrooms, rent_amount, deposit_amount, square_feet, is_occupied, tenant_name, tenant_phone, tenant_email, lease_start_date, lease_end_date) 
+INSERT INTO apartments (building_id, apartment_number, floor_number, bedrooms, bathrooms, kitchen, rent_amount, deposit_amount, water_meter_reading, is_occupied, tenant_name, tenant_phone, tenant_email, lease_start_date, lease_end_date) 
 VALUES 
 -- Sunset Apartments
-(1, '101', 1, 2, 1, 1200.00, 1200.00, 850, TRUE, 'Alice Johnson', '555-0101', 'alice.johnson@email.com', '2024-01-01', '2024-12-31'),
-(1, '102', 1, 1, 1, 900.00, 900.00, 650, FALSE, NULL, NULL, NULL, NULL, NULL),
-(1, '201', 2, 2, 2, 1400.00, 1400.00, 950, TRUE, 'Bob Smith', '555-0102', 'bob.smith@email.com', '2024-03-01', '2025-02-28'),
-(1, '202', 2, 3, 2, 1800.00, 1800.00, 1200, FALSE, NULL, NULL, NULL, NULL, NULL),
+(1, '101', 1, 2, 1, TRUE, 1200.00, 1200.00, 0, TRUE, 'Alice Johnson', '555-0101', 'alice.johnson@email.com', '2024-01-01', '2024-12-31'),
+(1, '102', 1, 1, 1, TRUE, 900.00, 900.00, 0, FALSE, NULL, NULL, NULL, NULL, NULL),
+(1, '201', 2, 2, 2, TRUE, 1400.00, 1400.00, 0, TRUE, 'Bob Smith', '555-0102', 'bob.smith@email.com', '2024-03-01', '2025-02-28'),
+(1, '202', 2, 3, 2, TRUE, 1800.00, 1800.00, 0, FALSE, NULL, NULL, NULL, NULL, NULL),
 -- Riverside Complex
-(2, 'A1', 1, 1, 1, 1000.00, 1000.00, 700, TRUE, 'Carol Davis', '555-0201', 'carol.davis@email.com', '2024-02-01', '2025-01-31'),
-(2, 'A2', 1, 2, 1, 1300.00, 1300.00, 900, FALSE, NULL, NULL, NULL, NULL, NULL),
-(2, 'B1', 2, 3, 2, 1600.00, 1600.00, 1100, TRUE, 'David Wilson', '555-0202', 'david.wilson@email.com', '2024-04-01', '2025-03-31')
+(2, 'A1', 1, 1, 1, TRUE, 1000.00, 1000.00, 0, TRUE, 'Carol Davis', '555-0201', 'carol.davis@email.com', '2024-02-01', '2025-01-31'),
+(2, 'A2', 1, 2, 1, TRUE, 1300.00, 1300.00, 0, FALSE, NULL, NULL, NULL, NULL, NULL),
+(2, 'B1', 2, 3, 2, TRUE, 1600.00, 1600.00, 0, TRUE, 'David Wilson', '555-0202', 'david.wilson@email.com', '2024-04-01', '2025-03-31')
 ON DUPLICATE KEY UPDATE apartment_number = apartment_number;
 
 -- Update building apartment counts
@@ -193,7 +194,9 @@ SELECT
     a.apartment_number,
     a.bedrooms,
     a.bathrooms,
+    a.kitchen,
     a.rent_amount,
+    a.water_meter_reading,
     a.is_occupied,
     a.tenant_name,
     a.tenant_phone,

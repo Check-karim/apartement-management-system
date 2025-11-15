@@ -62,9 +62,10 @@ export interface Apartment {
   floor_number?: number;
   bedrooms: number;
   bathrooms: number;
+  kitchen: boolean;
   rent_amount: number;
   deposit_amount: number;
-  square_feet?: number;
+  water_meter_reading: number;
   is_occupied: boolean;
   lease_start_date?: string;
   lease_end_date?: string;
@@ -83,16 +84,10 @@ export interface CreateApartmentData {
   floor_number?: number;
   bedrooms: number;
   bathrooms: number;
+  kitchen: boolean;
   rent_amount: number;
   deposit_amount: number;
-  square_feet?: number;
-  tenant_name?: string;
-  tenant_phone?: string;
-  tenant_email?: string;
-  emergency_contact_name?: string;
-  emergency_contact_phone?: string;
-  lease_start_date?: string;
-  lease_end_date?: string;
+  water_meter_reading: number;
 }
 
 // Currency Types

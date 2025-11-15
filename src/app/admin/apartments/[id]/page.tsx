@@ -18,7 +18,7 @@ import {
   DoorOpen,
   DoorClosed,
   MapPin,
-  Maximize,
+  Droplets,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Apartment } from "@/types";
@@ -219,17 +219,25 @@ export default function ApartmentDetailsPage() {
                   </p>
                 </div>
               )}
-              {apartment.square_feet && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center">
-                    <Maximize className="w-3 h-3 mr-1" />
-                    Square Feet
-                  </p>
-                  <p className="text-lg font-semibold text-gray-900 mt-1">
-                    {apartment.square_feet.toLocaleString()}
-                  </p>
-                </div>
-              )}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Kitchen
+                </p>
+                <p className="text-lg font-semibold text-gray-900 mt-1">
+                  {apartment.kitchen ? 'Yes' : 'No'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center">
+                  <Droplets className="w-3 h-3 mr-1" />
+                  Water Meter (m³)
+                </p>
+                <p className="text-lg font-semibold text-gray-900 mt-1">
+                  {apartment.water_meter_reading != null 
+                    ? Number(apartment.water_meter_reading).toFixed(2) 
+                    : '0.00'}
+                </p>
+              </div>
             </div>
           </div>
         </div>

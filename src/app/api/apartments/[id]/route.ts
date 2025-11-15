@@ -115,9 +115,10 @@ export async function PUT(
       floor_number,
       bedrooms,
       bathrooms,
+      kitchen,
       rent_amount,
       deposit_amount,
-      square_feet,
+      water_meter_reading,
       tenant_name,
       tenant_phone,
       tenant_email,
@@ -128,7 +129,7 @@ export async function PUT(
     } = body;
 
     // Validate required fields
-    if (!apartment_number || !bedrooms || !bathrooms || rent_amount === undefined) {
+    if (!apartment_number || !bedrooms || !bathrooms || rent_amount === undefined || water_meter_reading === undefined || kitchen === undefined) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
         { status: 400 }
@@ -188,9 +189,10 @@ export async function PUT(
         floor_number = ?, 
         bedrooms = ?, 
         bathrooms = ?,
+        kitchen = ?,
         rent_amount = ?, 
         deposit_amount = ?, 
-        square_feet = ?, 
+        water_meter_reading = ?, 
         is_occupied = ?,
         tenant_name = ?, 
         tenant_phone = ?, 
@@ -205,9 +207,10 @@ export async function PUT(
         floor_number || null,
         bedrooms,
         bathrooms,
+        kitchen,
         rent_amount,
         deposit_amount || 0,
-        square_feet || null,
+        water_meter_reading,
         is_occupied,
         tenant_name || null,
         tenant_phone || null,
