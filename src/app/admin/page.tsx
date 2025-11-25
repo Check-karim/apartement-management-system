@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { 
   Users, Building, Home, TrendingUp, 
   FileText, Bell, Settings, DollarSign, 
-  Droplet, UserCircle, ChevronRight 
+  Droplet, UserCircle, ChevronRight, Receipt, FileCheck 
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { User, Building as BuildingType, Apartment } from "@/types";
@@ -114,6 +114,27 @@ export default function AdminDashboard() {
       ],
     },
     {
+      title: "Water Billing",
+      items: [
+        {
+          icon: Receipt,
+          label: "Water Invoices",
+          description: "Manage WASAC invoices",
+          color: "text-cyan-600",
+          bgColor: "bg-cyan-50",
+          route: "/admin/water/invoices",
+        },
+        {
+          icon: Droplet,
+          label: "Water Bills",
+          description: "Generate & manage bills",
+          color: "text-blue-600",
+          bgColor: "bg-blue-50",
+          route: "/admin/water/bills",
+        },
+      ],
+    },
+    {
       title: "Reports & Analytics",
       items: [
         {
@@ -151,12 +172,20 @@ export default function AdminDashboard() {
           route: "/admin/settings/currency",
         },
         {
-          icon: Droplet,
-          label: "Water Formula",
-          description: "Water billing formula",
-          color: "text-cyan-600",
-          bgColor: "bg-cyan-50",
-          route: "/admin/settings/water-formula",
+          icon: FileCheck,
+          label: "Contract Templates",
+          description: "Manage lease templates",
+          color: "text-teal-600",
+          bgColor: "bg-teal-50",
+          route: "/admin/settings/contracts",
+        },
+        {
+          icon: Bell,
+          label: "SMS Settings",
+          description: "Configure TextBee SMS",
+          color: "text-purple-600",
+          bgColor: "bg-purple-50",
+          route: "/admin/settings/sms",
         },
         {
           icon: Settings,

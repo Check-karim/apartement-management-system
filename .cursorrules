@@ -134,6 +134,21 @@ src/
 - **Building CRUD**: `/api/buildings` (GET, POST) and `/api/buildings/[id]` (GET, PUT, DELETE)
 - **Apartment CRUD**: `/api/apartments` (GET, POST) and `/api/apartments/[id]` (GET, PUT, DELETE)
 - **Currency CRUD**: `/api/currencies` (GET, POST) and `/api/currencies/[id]` (GET, PUT, DELETE)
+- **Water Invoices**: `/api/water/invoices` (GET, POST) and `/api/water/invoices/[id]` (GET, PUT, DELETE)
+- **Water Bills**: `/api/water/bills` (GET, POST) and `/api/water/bills/[id]` (GET, PUT, DELETE)
+  - POST accepts `invoice_id` and `meter_readings` array
+  - Auto-calculates and creates bills
+- **Pompe Settings**: `/api/water/pompe` (GET, POST) - per-building pump electricity settings
+- **SMS Notifications**: `/api/sms/send` (POST) - send water bill SMS notifications via TextBee
+  - Returns detailed results (sent, failed, no_phone)
+  - Integrates with TextBee API (https://api.textbee.rw)
+  - Requires API key configuration in settings
+- **Settings Management**: `/api/settings` (GET, POST) - manage system configuration
+  - GET with ?keys=key1,key2 for specific settings
+  - POST with settings array for batch updates
+- **Contract Templates**: `/api/contracts/templates` (GET, POST) and `/api/contracts/templates/[id]` (GET, PUT, DELETE)
+- **Generate Contract**: `/api/contracts/generate` (POST) - generate contract from template
+- **File Upload**: `/api/upload` (POST) - upload tenant documents, contracts, invoices
 - All endpoints support filtering via query parameters (e.g., `?building_id=1`)
 
 ### Database Patterns
@@ -225,6 +240,87 @@ src/
 5. Test on various mobile devices
 6. Optimize performance and accessibility
 
+## Water Billing System
+
+### Water Bill Calculation Formula
+The system implements a comprehensive water billing calculation:
+
+**Step 1: Calculate Water Consumption**
+- `used_m3` = `current_meter_reading` - `previous_meter_reading`
+- `previous_meter_reading` comes from apartment's `water_meter_reading` field
+- `current_meter_reading` is entered during bill generation
+
+**Step 2: Calculate Price Per m³ (from WASAC Invoice)**
+- `price_per_m3` = `total_invoice_amount` / `total_invoice_m3`
+- This is auto-calculated from the water invoice
+
+**Step 3: Calculate Water Charge**
+- `water_amount` = `used_m3` × `price_per_m3`
+
+**Step 4: Calculate Pompe (Pump) Electricity Charge**
+- `pompe_price_per_m3` = `total_pompe_price_per_period` / `total_invoice_m3`
+- `pompe_amount` = `used_m3` × `pompe_price_per_m3`
+- Pompe settings are configured per building
+
+**Step 5: Calculate Total Bill**
+- `total_water_bill` = `water_amount` + `pompe_amount`
+
+### Water Billing Workflow
+1. **Admin creates Water Invoice** (WASAC Bill)
+   - Input: Building, invoice number, dates, total m³, total amount
+   - System auto-calculates price per m³
+   
+2. **Admin generates Water Bills**
+   - Select invoice
+   - Enter current meter readings for each apartment
+   - System calculates bills automatically
+   - Bills are saved to database
+   - Previous meter readings are updated
+
+3. **Send SMS Notifications**
+   - Select bills to notify
+   - System formats SMS with bill details
+   - Tracks delivery status (sent, failed, no_phone)
+   - Handles tenants without phone numbers
+
+4. **Track Payments**
+   - Mark bills as paid/unpaid
+   - Record payment date
+   - View payment status
+
+### SMS Notification System (TextBee Integration)
+- **Provider**: TextBee SMS Gateway (https://www.textbee.rw)
+- **Configuration**: Admin Settings → SMS Settings
+  - Enable/disable SMS notifications
+  - TextBee API Key (required)
+  - Sender name (max 11 characters)
+- **Status Types**: pending, sent, failed, no_phone
+- **Message Format**: Includes tenant name, apartment, period, usage, charges, total
+- **Error Handling**: 
+  - No phone number: Notify admin/manager
+  - Failed delivery: Log error with TextBee response
+  - API errors: Logged with connection details
+- **Bulk Operations**: Send to multiple apartments at once
+- **Real-time Tracking**: Delivery status per SMS
+- **Resend Capability**: Retry failed SMS from Water Bills page
+
+### Contract Template System
+- **Templates**: Customizable lease agreement templates
+- **Placeholders**: Dynamic fields like `{{TENANT_NAME}}`, `{{RENT_AMOUNT}}`, etc.
+- **Generation**: Auto-fill templates with apartment/tenant data
+- **Storage**: Upload signed contracts to system
+- **Download**: Generate and download contracts as needed
+
+### File Upload System
+- **Supported Types**: 
+  - Tenant ID/Passport documents
+  - Signed lease contracts
+  - Water invoice files (optional)
+- **Storage**: `public/uploads/{type}/` directories
+- **Max Size**: 10MB per file
+- **Security**: Authenticated uploads only
+- **Access Control**: Role-based download permissions
+
 ## Admin Interface Structure
 The admin interface follows a modern card-based design with the following sections:
 
@@ -258,10 +354,12 @@ The admin interface follows a modern card-based design with the following sectio
 ### Apartment Data Model
 - **Required Fields**: building_id, apartment_number, bedrooms, bathrooms, kitchen, rent_amount, water_meter_reading
 - **Optional Fields**: floor_number, deposit_amount
-- **Tenant Fields** (managed via edit page): tenant_name, tenant_phone, tenant_email, emergency_contact_name, emergency_contact_phone, lease_start_date, lease_end_date, is_occupied
+- **Tenant Fields** (managed via edit page): tenant_name, tenant_id_passport, tenant_phone, tenant_phone_country_code, tenant_email, emergency_contact_name, emergency_contact_phone, lease_start_date, lease_end_date, is_occupied
+- **Tenant Documents**: tenant_id_document_path, tenant_contract_path (file upload paths)
 - **Removed Fields**: square_feet (not needed for this system)
 - **Water Meter**: Tracks current water meter reading in cubic meters (m³) for billing purposes
 - **Kitchen**: Boolean field indicating if the apartment has a kitchen (default: true)
+- **Phone**: Includes country code field (default: +250 for Rwanda)
 
 ### Reports Section
 - **Reports Hub** (`/admin/reports`): Navigation to all report types
@@ -270,16 +368,45 @@ The admin interface follows a modern card-based design with the following sectio
 - **Apartment Reports** (`/admin/reports/apartments`): Occupancy and revenue stats
 - **Building Reports** (`/admin/reports/buildings`): Building performance analytics
 
+### Water Management
+- **Water Invoices** (`/admin/water/invoices`): WASAC invoice management
+  - Create new invoices with building, period, m³, amount
+  - Auto-calculate price per m³
+  - Generate bills button per invoice
+  - Filter by building, search
+- **Water Bills** (`/admin/water/bills`): Generated bills management
+  - View all bills with filters (building, paid status)
+  - Mark as paid/unpaid
+  - Send SMS notifications (individual or bulk)
+  - Select multiple bills for batch operations
+  - SMS results modal with delivery status
+- **Generate Bills** (`/admin/water/bills/generate`): Bill generation interface
+  - Select invoice
+  - Enter current meter readings
+  - Real-time calculation preview
+  - Validation (current >= previous)
+  - Bulk generation for building
+  
 ### Notifications
 - **Notifications Hub** (`/admin/notifications`): 3 notification types
 - **Maintenance** (`/admin/notifications/maintenance`): Maintenance alerts with priority
-- **Water** (`/admin/notifications/water`): Water billing notifications
+- **Water** (`/admin/notifications/water`): Water billing notifications (legacy - now in water bills)
 - **Compound** (`/admin/notifications/compound`): General announcements
 
 ### Settings
 - **Settings Hub** (`/admin/settings`): Navigation to settings
-- **Currency** (`/admin/settings/currency`): Currency configuration with live preview
-- **Water Formula** (`/admin/settings/water-formula`): Billing formula with calculation example
+- **Currency** (`/admin/settings/currency`): Currency configuration with live preview (default: RWF)
+- **Contract Templates** (`/admin/settings/contracts`): Lease agreement template management
+  - Create/edit/delete templates
+  - Set default template
+  - Available placeholders documentation
+  - Template preview
+  - Copy placeholders to clipboard
+- **SMS Settings** (`/admin/settings/sms`): TextBee SMS gateway configuration
+  - Enable/disable SMS notifications
+  - TextBee API key configuration
+  - Sender name setup
+  - Integration instructions
 
 ### Profile Management
 - **Admin Profile** (`/admin/profile`): Two-tab interface (Profile Info & Security)
@@ -302,16 +429,65 @@ The admin interface follows a modern card-based design with the following sectio
 - Touch-friendly buttons (min 44px height)
 - Consistent spacing and typography
 - Toast notifications for user feedback
+- Modals for complex forms and results display
+- Bulk selection with checkbox patterns
+- Real-time calculation previews
+- File upload with progress indication
+- Download buttons for uploaded documents
+- Currency formatting based on system settings (position: before/after)
+- Phone number formatting with country code
+- Date formatting for periods and timestamps
+
+### Water Billing UI Patterns
+- **Invoice Cards**: Display invoice number, building, period, totals
+- **Meter Reading Input**: Side-by-side previous/current with validation
+- **Bill Calculation Preview**: Show breakdown (water + pompe = total)
+- **SMS Status Indicators**: Color-coded icons (green=sent, red=failed, gray=no phone)
+- **Bulk Actions Bar**: Sticky bar when items selected
+- **Results Modal**: Show detailed SMS delivery results
+- **Stats Cards**: Grid layout for totals, payments, counts
+- **Filter Controls**: Building dropdown, paid status toggle, search
+
+### File Upload Patterns
+- Drag-and-drop or click to upload
+- Preview uploaded file name/size
+- Show download button for existing files
+- Delete/replace file option
+- File type and size validation
+- Progress indicator during upload
+- Store relative paths in database (`/uploads/{type}/{filename}`)
+
+### Contract Generation Patterns
+- Template selection dropdown
+- Preview before download
+- Placeholder documentation visible
+- Fill all required fields validation
+- Download as text/PDF
+- Upload signed version back to system
 
 ## Database Enhancements
 - `system_settings` table for configuration management
+- `water_invoices` table for WASAC bills (building-specific, period-based)
+- `water_bills` table for apartment water bills (auto-calculated amounts)
+- `pompe_settings` table for pump electricity costs (per-building)
+- `sms_notifications` table for SMS delivery logs
+- `contract_templates` table for lease agreement templates
 - `admin_dashboard_stats` view for dashboard statistics
 - `building_performance` view for building analytics
 - `payment_analytics` view for payment reporting
-- Default settings for currency and water billing
+- `water_billing_summary` view for comprehensive water bill data
+- `water_billing_analytics` view for building-wise water analytics
+- `apartment_tenant_details` view for enhanced apartment info
+- Default settings for currency (RWF) and SMS configuration
+- Default contract template with placeholders
 - Database triggers for automatic apartment count synchronization
   - `after_apartment_insert`: Updates building count on new apartment
   - `after_apartment_delete`: Updates building count on apartment deletion
   - `after_apartment_update`: Handles building changes when apartment is moved
+- Generated columns in water_bills:
+  - `used_m3`: auto-calculated from meter readings
+  - `water_amount`: auto-calculated water charge
+  - `pompe_amount`: auto-calculated pump charge
+  - `total_amount`: auto-calculated total bill
 
 Remember: This is a mobile-first application. Every feature should work perfectly on mobile devices before considering desktop adaptations. 

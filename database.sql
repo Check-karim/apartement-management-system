@@ -46,10 +46,14 @@ CREATE TABLE IF NOT EXISTS apartments (
     lease_start_date DATE,
     lease_end_date DATE,
     tenant_name VARCHAR(100),
+    tenant_id_passport VARCHAR(100),
     tenant_phone VARCHAR(20),
+    tenant_phone_country_code VARCHAR(10) DEFAULT '+250',
     tenant_email VARCHAR(100),
     emergency_contact_name VARCHAR(100),
     emergency_contact_phone VARCHAR(20),
+    tenant_id_document_path VARCHAR(255),
+    tenant_contract_path VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (building_id) REFERENCES buildings(id) ON DELETE CASCADE,
@@ -107,6 +111,109 @@ CREATE TABLE IF NOT EXISTS maintenance_requests (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (apartment_id) REFERENCES apartments(id) ON DELETE CASCADE,
     FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Water Invoices Table (WASAC Bills)
+CREATE TABLE IF NOT EXISTS water_invoices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    building_id INT NOT NULL,
+    invoice_number VARCHAR(50) UNIQUE NOT NULL,
+    invoice_date DATE NOT NULL,
+    billing_period_start DATE NOT NULL,
+    billing_period_end DATE NOT NULL,
+    total_m3 DECIMAL(10, 2) NOT NULL,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    price_per_m3 DECIMAL(10, 2) GENERATED ALWAYS AS (total_amount / total_m3) STORED,
+    invoice_file_path VARCHAR(255),
+    notes TEXT,
+    created_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (building_id) REFERENCES buildings(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Pompe Electricity Settings (per building)
+CREATE TABLE IF NOT EXISTS pompe_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    building_id INT NOT NULL UNIQUE,
+    total_price_per_period DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (building_id) REFERENCES buildings(id) ON DELETE CASCADE
+);
+
+-- Water Bills Table (per apartment)
+CREATE TABLE IF NOT EXISTS water_bills (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    apartment_id INT NOT NULL,
+    invoice_id INT NOT NULL,
+    building_id INT NOT NULL,
+    billing_period_start DATE NOT NULL,
+    billing_period_end DATE NOT NULL,
+    previous_meter_reading DECIMAL(10, 2) NOT NULL,
+    current_meter_reading DECIMAL(10, 2) NOT NULL,
+    used_m3 DECIMAL(10, 2) GENERATED ALWAYS AS (current_meter_reading - previous_meter_reading) STORED,
+    price_per_m3 DECIMAL(10, 2) NOT NULL,
+    water_amount DECIMAL(10, 2) GENERATED ALWAYS AS ((current_meter_reading - previous_meter_reading) * price_per_m3) STORED,
+    pompe_price_per_m3 DECIMAL(10, 2) DEFAULT 0,
+    pompe_amount DECIMAL(10, 2) GENERATED ALWAYS AS ((current_meter_reading - previous_meter_reading) * pompe_price_per_m3) STORED,
+    total_amount DECIMAL(10, 2) GENERATED ALWAYS AS ((current_meter_reading - previous_meter_reading) * (price_per_m3 + pompe_price_per_m3)) STORED,
+    is_paid BOOLEAN DEFAULT FALSE,
+    payment_date DATE,
+    sms_sent BOOLEAN DEFAULT FALSE,
+    sms_sent_at TIMESTAMP NULL,
+    sms_delivery_status ENUM('pending', 'sent', 'failed', 'no_phone') DEFAULT 'pending',
+    sms_error_message TEXT,
+    created_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (apartment_id) REFERENCES apartments(id) ON DELETE CASCADE,
+    FOREIGN KEY (invoice_id) REFERENCES water_invoices(id) ON DELETE CASCADE,
+    FOREIGN KEY (building_id) REFERENCES buildings(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_water_bills_apartment (apartment_id),
+    INDEX idx_water_bills_invoice (invoice_id),
+    INDEX idx_water_bills_building (building_id),
+    INDEX idx_water_bills_period (billing_period_start, billing_period_end),
+    INDEX idx_water_bills_paid (is_paid),
+    INDEX idx_water_bills_sms (sms_sent, sms_delivery_status)
+);
+
+-- SMS Notification Log
+CREATE TABLE IF NOT EXISTS sms_notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    water_bill_id INT,
+    apartment_id INT,
+    phone_number VARCHAR(20) NOT NULL,
+    message TEXT NOT NULL,
+    status ENUM('pending', 'sent', 'failed', 'no_phone') DEFAULT 'pending',
+    delivery_status VARCHAR(50),
+    error_message TEXT,
+    sent_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (water_bill_id) REFERENCES water_bills(id) ON DELETE CASCADE,
+    FOREIGN KEY (apartment_id) REFERENCES apartments(id) ON DELETE CASCADE,
+    INDEX idx_sms_water_bill (water_bill_id),
+    INDEX idx_sms_apartment (apartment_id),
+    INDEX idx_sms_status (status),
+    INDEX idx_sms_sent_at (sent_at)
+);
+
+-- Contract Templates Table
+CREATE TABLE IF NOT EXISTS contract_templates (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    content TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Insert default admin user
@@ -186,6 +293,25 @@ VALUES
 (3, 'Broken Air Conditioning', 'The air conditioning unit is not cooling properly. Temperature control is not working.', 'high', 'in_progress', 'Bob Smith', 2, 250.00),
 (5, 'Bathroom Light Fixture', 'The light fixture in the main bathroom is flickering and needs replacement.', 'low', 'completed', 'Carol Davis', 2, 45.00)
 ON DUPLICATE KEY UPDATE id = id;
+
+-- Insert default pompe settings for buildings
+INSERT INTO pompe_settings (building_id, total_price_per_period, is_active, notes)
+VALUES
+(1, 50000.00, TRUE, 'Monthly electricity cost for water pump'),
+(2, 45000.00, TRUE, 'Monthly electricity cost for water pump')
+ON DUPLICATE KEY UPDATE building_id = building_id;
+
+-- Insert default contract template
+INSERT INTO contract_templates (name, description, content, is_active, is_default, created_by)
+VALUES (
+    'Standard Lease Agreement',
+    'Default lease agreement template for residential apartments',
+    'RESIDENTIAL LEASE AGREEMENT\n\nThis Lease Agreement ("Agreement") is entered into on {{LEASE_START_DATE}} between:\n\nLANDLORD: {{BUILDING_NAME}}\nAddress: {{BUILDING_ADDRESS}}\nPhone: {{MANAGER_PHONE}}\n\nTENANT: {{TENANT_NAME}}\nID/Passport: {{TENANT_ID_PASSPORT}}\nPhone: {{TENANT_PHONE}}\nEmail: {{TENANT_EMAIL}}\n\nPREMISES\nApartment Number: {{APARTMENT_NUMBER}}\nFloor: {{FLOOR_NUMBER}}\nBedrooms: {{BEDROOMS}}\nBathrooms: {{BATHROOMS}}\n\nTERM\nLease Start Date: {{LEASE_START_DATE}}\nLease End Date: {{LEASE_END_DATE}}\n\nRENT\nMonthly Rent: {{RENT_AMOUNT}} {{CURRENCY_SYMBOL}}\nSecurity Deposit: {{DEPOSIT_AMOUNT}} {{CURRENCY_SYMBOL}}\nWater Bills: Calculated monthly based on meter readings\n\nPAYMENT TERMS\n- Rent is due on the 1st day of each month\n- Late payments after the 5th will incur a late fee\n- Water bills are calculated separately and due upon notification\n- All payments should be made to the building manager\n\nTENANT RESPONSIBILITIES\n- Maintain the apartment in good condition\n- Report any maintenance issues promptly\n- Pay rent and utilities on time\n- Comply with building rules and regulations\n- Provide accurate water meter readings when requested\n\nLANDLORD RESPONSIBILITIES\n- Maintain common areas and building facilities\n- Address maintenance requests in a timely manner\n- Provide 24-hour emergency contact\n- Calculate and notify water bills accurately\n\nTERMINATION\n- Either party may terminate with 30 days written notice\n- Tenant must return apartment in good condition\n- Security deposit will be returned within 14 days after move-out\n\nEMERGENCY CONTACT\nName: {{EMERGENCY_CONTACT_NAME}}\nPhone: {{EMERGENCY_CONTACT_PHONE}}\n\nBy signing below, both parties agree to the terms and conditions outlined in this Agreement.\n\n_________________________          _________________________\nLandlord Signature                 Tenant Signature\nDate: _______________              Date: _______________\n\nFor office use:\nWater Meter Reading at Move-in: {{WATER_METER_READING}} m³',
+    TRUE,
+    TRUE,
+    1
+)
+ON DUPLICATE KEY UPDATE name = name;
 
 -- Create a view for apartment summary
 CREATE OR REPLACE VIEW apartment_summary AS
@@ -276,20 +402,21 @@ CREATE TABLE IF NOT EXISTS currencies (
 
 -- Insert default system settings
 INSERT INTO system_settings (setting_key, setting_value, setting_type, description) VALUES
-('currency_code', 'USD', 'string', 'Default currency code'),
-('currency_symbol', '$', 'string', 'Currency symbol'),
-('currency_position', 'before', 'string', 'Position of currency symbol (before/after)'),
+('currency_code', 'RWF', 'string', 'Default currency code'),
+('currency_symbol', 'FRw', 'string', 'Currency symbol'),
+('currency_position', 'after', 'string', 'Position of currency symbol (before/after)'),
 ('currency_decimal_places', '2', 'number', 'Number of decimal places for currency'),
-('water_base_rate', '5.00', 'number', 'Base rate for water billing'),
-('water_per_unit_rate', '0.50', 'number', 'Per unit rate for water consumption'),
-('water_service_fee', '2.00', 'number', 'Service fee for water billing'),
 ('notification_email_enabled', 'true', 'boolean', 'Enable email notifications'),
-('notification_sms_enabled', 'false', 'boolean', 'Enable SMS notifications')
+('notification_sms_enabled', 'false', 'boolean', 'Enable SMS notifications (requires TextBee API key)'),
+('sms_api_provider', 'textbee', 'string', 'SMS API provider (textbee)'),
+('sms_api_key', '', 'string', 'TextBee API Key (get from textbee.rw)'),
+('sms_sender_name', 'AMS', 'string', 'SMS sender name (max 11 characters)')
 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
 
 -- Insert default currencies
 INSERT INTO currencies (code, name, symbol, position, decimal_places, is_active, is_default) VALUES
-('USD', 'US Dollar', '$', 'before', 2, TRUE, TRUE),
+('RWF', 'Rwandan Franc', 'FRw', 'after', 2, TRUE, TRUE),
+('USD', 'US Dollar', '$', 'before', 2, TRUE, FALSE),
 ('EUR', 'Euro', '€', 'before', 2, TRUE, FALSE),
 ('GBP', 'British Pound', '£', 'before', 2, TRUE, FALSE),
 ('JPY', 'Japanese Yen', '¥', 'before', 0, TRUE, FALSE),
@@ -343,6 +470,90 @@ SELECT
 FROM rent_payments
 GROUP BY DATE_FORMAT(payment_date, '%Y-%m')
 ORDER BY month DESC;
+
+-- Create view for water billing summary
+CREATE OR REPLACE VIEW water_billing_summary AS
+SELECT 
+    wb.id,
+    wb.billing_period_start,
+    wb.billing_period_end,
+    a.apartment_number,
+    a.tenant_name,
+    a.tenant_phone,
+    a.tenant_phone_country_code,
+    b.name as building_name,
+    wb.previous_meter_reading,
+    wb.current_meter_reading,
+    wb.used_m3,
+    wb.price_per_m3,
+    wb.water_amount,
+    wb.pompe_price_per_m3,
+    wb.pompe_amount,
+    wb.total_amount,
+    wb.is_paid,
+    wb.payment_date,
+    wb.sms_sent,
+    wb.sms_delivery_status,
+    wi.invoice_number
+FROM water_bills wb
+JOIN apartments a ON wb.apartment_id = a.id
+JOIN buildings b ON wb.building_id = b.id
+JOIN water_invoices wi ON wb.invoice_id = wi.id
+ORDER BY wb.created_at DESC;
+
+-- Create view for water billing analytics by building
+CREATE OR REPLACE VIEW water_billing_analytics AS
+SELECT 
+    b.id as building_id,
+    b.name as building_name,
+    DATE_FORMAT(wb.billing_period_start, '%Y-%m') as billing_month,
+    COUNT(wb.id) as total_bills,
+    SUM(wb.used_m3) as total_m3_used,
+    SUM(wb.water_amount) as total_water_amount,
+    SUM(wb.pompe_amount) as total_pompe_amount,
+    SUM(wb.total_amount) as total_amount,
+    COUNT(CASE WHEN wb.is_paid = TRUE THEN 1 END) as paid_bills,
+    COUNT(CASE WHEN wb.is_paid = FALSE THEN 1 END) as unpaid_bills,
+    COUNT(CASE WHEN wb.sms_sent = TRUE THEN 1 END) as sms_sent_count,
+    COUNT(CASE WHEN wb.sms_delivery_status = 'failed' THEN 1 END) as sms_failed_count
+FROM buildings b
+LEFT JOIN water_bills wb ON b.id = wb.building_id
+GROUP BY b.id, b.name, DATE_FORMAT(wb.billing_period_start, '%Y-%m')
+ORDER BY billing_month DESC, b.name;
+
+-- Create view for apartments with tenant details
+CREATE OR REPLACE VIEW apartment_tenant_details AS
+SELECT 
+    a.id,
+    a.apartment_number,
+    a.floor_number,
+    a.bedrooms,
+    a.bathrooms,
+    a.kitchen,
+    a.rent_amount,
+    a.water_meter_reading,
+    a.is_occupied,
+    a.tenant_name,
+    a.tenant_id_passport,
+    a.tenant_phone,
+    a.tenant_phone_country_code,
+    CONCAT(a.tenant_phone_country_code, a.tenant_phone) as full_phone_number,
+    a.tenant_email,
+    a.tenant_id_document_path,
+    a.tenant_contract_path,
+    a.lease_start_date,
+    a.lease_end_date,
+    a.emergency_contact_name,
+    a.emergency_contact_phone,
+    b.id as building_id,
+    b.name as building_name,
+    b.address as building_address,
+    u.full_name as manager_name,
+    u.email as manager_email,
+    u.phone as manager_phone
+FROM apartments a
+JOIN buildings b ON a.building_id = b.id
+LEFT JOIN users u ON b.manager_id = u.id;
 
 -- Triggers for automatic apartment count updates
 -- These triggers ensure the buildings.total_apartments field stays synchronized
