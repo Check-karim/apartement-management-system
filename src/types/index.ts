@@ -72,6 +72,9 @@ export interface Apartment {
   tenant_name?: string;
   tenant_phone?: string;
   tenant_email?: string;
+  tenant_id_passport?: string;
+  tenant_id_document_path?: string;
+  tenant_contract_path?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
   created_at: string;

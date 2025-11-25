@@ -122,13 +122,43 @@ export async function PUT(
       tenant_name,
       tenant_phone,
       tenant_email,
+      tenant_id_passport,
+      tenant_id_document_path,
+      tenant_contract_path,
       emergency_contact_name,
       emergency_contact_phone,
       lease_start_date,
       lease_end_date,
     } = body;
 
-    // Validate required fields
+    // Validate required fields (only if provided - for partial updates)
+    // For partial updates (like document uploads), allow updating just specific fields
+    if (body.tenant_contract_path !== undefined && Object.keys(body).length === 1) {
+      // This is a contract upload update only
+      await executeQuery(
+        `UPDATE apartments SET tenant_contract_path = ? WHERE id = ?`,
+        [tenant_contract_path, apartmentId]
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: "Contract path updated successfully",
+      });
+    }
+
+    if (body.tenant_id_document_path !== undefined && Object.keys(body).length === 1) {
+      // This is an ID document upload update only
+      await executeQuery(
+        `UPDATE apartments SET tenant_id_document_path = ? WHERE id = ?`,
+        [tenant_id_document_path, apartmentId]
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: "ID document path updated successfully",
+      });
+    }
+
     if (!apartment_number || !bedrooms || !bathrooms || rent_amount === undefined || water_meter_reading === undefined || kitchen === undefined) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
@@ -197,6 +227,9 @@ export async function PUT(
         tenant_name = ?, 
         tenant_phone = ?, 
         tenant_email = ?,
+        tenant_id_passport = ?,
+        tenant_id_document_path = ?,
+        tenant_contract_path = ?,
         emergency_contact_name = ?, 
         emergency_contact_phone = ?,
         lease_start_date = ?, 
@@ -215,6 +248,9 @@ export async function PUT(
         tenant_name || null,
         tenant_phone || null,
         tenant_email || null,
+        tenant_id_passport || null,
+        tenant_id_document_path || null,
+        tenant_contract_path || null,
         emergency_contact_name || null,
         emergency_contact_phone || null,
         lease_start_date || null,

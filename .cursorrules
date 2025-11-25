@@ -304,12 +304,24 @@ The system implements a comprehensive water billing calculation:
 - **Real-time Tracking**: Delivery status per SMS
 - **Resend Capability**: Retry failed SMS from Water Bills page
 
-### Contract Template System
-- **Templates**: Customizable lease agreement templates
-- **Placeholders**: Dynamic fields like `{{TENANT_NAME}}`, `{{RENT_AMOUNT}}`, etc.
-- **Generation**: Auto-fill templates with apartment/tenant data
-- **Storage**: Upload signed contracts to system
-- **Download**: Generate and download contracts as needed
+### Contract Management System
+- **Location**: Apartment Details Page → Contract Management section (only visible for occupied apartments)
+- **Templates**: Customizable lease agreement templates managed in Settings → Contract Templates
+- **Placeholders**: Dynamic fields like `{{TENANT_NAME}}`, `{{RENT_AMOUNT}}`, `{{BUILDING_NAME}}`, etc.
+- **Generation**: 
+  - Select template from dropdown (shows default)
+  - Auto-fill templates with apartment/tenant data
+  - Download as text file: `Contract_{apartment_number}_{tenant_name}.txt`
+  - Database values converted to proper format: `Number(value).toFixed(2)` for currency
+- **Upload Signed Contract**: 
+  - Drag-and-drop or click to upload
+  - Supports: PDF, DOC, DOCX, JPG, PNG (max 10MB)
+  - Saves to `/public/uploads/tenant_contract/` with unique timestamp
+  - Updates apartment record with contract path
+- **Download Signed Contract**: 
+  - Green success button when contract exists
+  - Opens contract in new tab/window
+  - Available anytime after upload
 
 ### File Upload System
 - **Supported Types**: 
@@ -348,7 +360,7 @@ The admin interface follows a modern card-based design with the following sectio
 ### Apartment Management
 - **List Page** (`/admin/apartments`): Search, multi-filter (building, occupancy), view all units
 - **Create Page** (`/admin/apartments/create`): Add new apartment (unit number, floor, bedrooms, bathrooms, kitchen, rent, deposit, water meter reading). Apartments are created vacant; tenant info added via edit page.
-- **Details Page** (`/admin/apartments/[id]`): Complete apartment and tenant information
+- **Details Page** (`/admin/apartments/[id]`): Complete apartment and tenant information, contract management (generate, upload, download)
 - **Edit Page** (`/admin/apartments/[id]/edit`): Update apartment and tenant details
 
 ### Apartment Data Model

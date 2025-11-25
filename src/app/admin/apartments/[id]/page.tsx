@@ -19,6 +19,13 @@ import {
   DoorClosed,
   MapPin,
   Droplets,
+  FileText,
+  Download,
+  Upload,
+  CheckCircle2,
+  Loader2,
+  CreditCard,
+  Eye,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Apartment } from "@/types";
@@ -31,6 +38,11 @@ export default function ApartmentDetailsPage() {
 
   const [apartment, setApartment] = useState<Apartment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGeneratingContract, setIsGeneratingContract] = useState(false);
+  const [isUploadingContract, setIsUploadingContract] = useState(false);
+  const [isUploadingIdDocument, setIsUploadingIdDocument] = useState(false);
+  const [contractTemplates, setContractTemplates] = useState<any[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
 
   useEffect(() => {
     if (status === "loading") return;
@@ -41,7 +53,29 @@ export default function ApartmentDetailsPage() {
     }
 
     fetchApartmentData();
+    fetchContractTemplates();
   }, [session, status, router, apartmentId]);
+
+  const fetchContractTemplates = async () => {
+    try {
+      const response = await fetch("/api/contracts/templates");
+      if (response.ok) {
+        const data = await response.json();
+        const templates = data.data || [];
+        setContractTemplates(templates);
+        
+        // Set default template if available
+        const defaultTemplate = templates.find((t: any) => t.is_default);
+        if (defaultTemplate) {
+          setSelectedTemplateId(defaultTemplate.id.toString());
+        } else if (templates.length > 0) {
+          setSelectedTemplateId(templates[0].id.toString());
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching contract templates:", error);
+    }
+  };
 
   const fetchApartmentData = async () => {
     try {
@@ -103,6 +137,184 @@ export default function ApartmentDetailsPage() {
       month: "long",
       day: "numeric",
     });
+  };
+
+  const handleGenerateContract = async () => {
+    if (!apartment) return;
+
+    if (!selectedTemplateId) {
+      toast.error("Please select a contract template");
+      return;
+    }
+
+    if (!apartment.tenant_name) {
+      toast.error("Cannot generate contract for vacant apartment");
+      return;
+    }
+
+    try {
+      setIsGeneratingContract(true);
+
+      const response = await fetch("/api/contracts/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          template_id: parseInt(selectedTemplateId),
+          apartment_id: apartmentId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate contract");
+      }
+
+      const data = await response.json();
+      
+      // Create a downloadable file
+      const blob = new Blob([data.data.content], { type: "text/plain" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Contract_${apartment.apartment_number}_${apartment.tenant_name?.replace(/\s+/g, "_")}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success("Contract generated and downloaded successfully");
+    } catch (error) {
+      console.error("Error generating contract:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to generate contract");
+    } finally {
+      setIsGeneratingContract(false);
+    }
+  };
+
+  const handleContractUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !apartment) return;
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be less than 10MB");
+      return;
+    }
+
+    try {
+      setIsUploadingContract(true);
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "tenant_contract");
+      formData.append("related_id", apartmentId);
+
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || "Failed to upload contract");
+      }
+
+      const uploadData = await uploadResponse.json();
+      const contractPath = uploadData.data.path;
+
+      // Update apartment with contract path
+      const updateResponse = await fetch(`/api/apartments/${apartmentId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tenant_contract_path: contractPath,
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error("Failed to update apartment with contract");
+      }
+
+      toast.success("Signed contract uploaded successfully");
+      fetchApartmentData(); // Refresh apartment data
+    } catch (error) {
+      console.error("Error uploading contract:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to upload contract");
+    } finally {
+      setIsUploadingContract(false);
+    }
+  };
+
+  const handleDownloadSignedContract = () => {
+    if (apartment?.tenant_contract_path) {
+      window.open(apartment.tenant_contract_path, "_blank");
+    }
+  };
+
+  const handleIdDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !apartment) return;
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be less than 10MB");
+      return;
+    }
+
+    try {
+      setIsUploadingIdDocument(true);
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "tenant_id");
+      formData.append("related_id", apartmentId);
+
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || "Failed to upload ID document");
+      }
+
+      const uploadData = await uploadResponse.json();
+      const documentPath = uploadData.data.path;
+
+      // Update apartment with ID document path
+      const updateResponse = await fetch(`/api/apartments/${apartmentId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tenant_id_document_path: documentPath,
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error("Failed to update apartment with ID document");
+      }
+
+      toast.success("Tenant ID document uploaded successfully");
+      fetchApartmentData(); // Refresh apartment data
+    } catch (error) {
+      console.error("Error uploading ID document:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to upload ID document");
+    } finally {
+      setIsUploadingIdDocument(false);
+    }
+  };
+
+  const handleDownloadIdDocument = () => {
+    if (apartment?.tenant_id_document_path) {
+      window.open(apartment.tenant_id_document_path, "_blank");
+    }
   };
 
   if (status === "loading" || isLoading) {
@@ -319,6 +531,75 @@ export default function ApartmentDetailsPage() {
                 </div>
               )}
 
+              {/* Tenant ID/Passport */}
+              <div className="pt-3 border-t border-gray-100">
+                <div className="flex items-center space-x-2 mb-2">
+                  <CreditCard className="w-4 h-4 text-purple-500" />
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    ID / Passport
+                  </p>
+                </div>
+                
+                {apartment.tenant_id_passport && (
+                  <p className="text-gray-900 font-medium mb-2">
+                    {apartment.tenant_id_passport}
+                  </p>
+                )}
+
+                {/* Upload ID Document */}
+                <div className="mt-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="file"
+                      id="id-document-upload"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleIdDocumentUpload}
+                      disabled={isUploadingIdDocument}
+                      className="hidden"
+                    />
+                    
+                    {apartment.tenant_id_document_path ? (
+                      <button
+                        onClick={handleDownloadIdDocument}
+                        className="flex-1 bg-green-50 border border-green-200 text-green-700 py-2 px-3 rounded-lg font-medium hover:bg-green-100 transition-colors flex items-center justify-center space-x-2 text-sm"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span>View ID Document</span>
+                        <Download className="w-3 h-3 ml-auto" />
+                      </button>
+                    ) : (
+                      <label
+                        htmlFor="id-document-upload"
+                        className={`flex-1 bg-purple-50 border-2 border-dashed border-purple-300 rounded-lg py-2 px-3 text-center cursor-pointer hover:bg-purple-100 transition-colors ${
+                          isUploadingIdDocument ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                      >
+                        <div className="flex items-center justify-center space-x-2">
+                          {isUploadingIdDocument ? (
+                            <>
+                              <Loader2 className="w-3 h-3 text-purple-600 animate-spin" />
+                              <span className="text-xs text-purple-600 font-medium">Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-3 h-3 text-purple-600" />
+                              <span className="text-xs text-purple-600 font-medium">
+                                Upload ID Document
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </label>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {apartment.tenant_id_document_path 
+                      ? "ID document uploaded" 
+                      : "PDF, JPG, PNG (max 10MB)"}
+                  </p>
+                </div>
+              </div>
+
               {(apartment.lease_start_date || apartment.lease_end_date) && (
                 <div className="pt-3 border-t border-gray-100">
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
@@ -373,6 +654,124 @@ export default function ApartmentDetailsPage() {
                   This apartment is currently available for rent.
                 </p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Contract Management */}
+        {apartment.is_occupied && apartment.tenant_name && (
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="flex items-center space-x-3 mb-4">
+              <FileText className="w-5 h-5 text-indigo-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Contract Management</h3>
+            </div>
+
+            <div className="space-y-4">
+              {/* Generate Contract */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Generate New Contract
+                </label>
+                <div className="flex space-x-2">
+                  {contractTemplates.length > 0 ? (
+                    <>
+                      <select
+                        value={selectedTemplateId}
+                        onChange={(e) => setSelectedTemplateId(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-gray-900"
+                        disabled={isGeneratingContract}
+                      >
+                        {contractTemplates.map((template) => (
+                          <option key={template.id} value={template.id}>
+                            {template.name} {template.is_default ? "(Default)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={handleGenerateContract}
+                        disabled={isGeneratingContract}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                      >
+                        {isGeneratingContract ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Download className="w-4 h-4" />
+                        )}
+                        <span>{isGeneratingContract ? "Generating..." : "Generate"}</span>
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex-1 text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                      No contract templates available. Please create a template in Settings → Contract Templates.
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Generate a contract using tenant and apartment information
+                </p>
+              </div>
+
+              {/* Upload Signed Contract */}
+              <div className="pt-3 border-t border-gray-100">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload Signed Contract
+                </label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="file"
+                    id="contract-upload"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    onChange={handleContractUpload}
+                    disabled={isUploadingContract}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="contract-upload"
+                    className={`flex-1 bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-3 text-center cursor-pointer hover:bg-blue-100 transition-colors ${
+                      isUploadingContract ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      {isUploadingContract ? (
+                        <>
+                          <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                          <span className="text-sm text-blue-600 font-medium">Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm text-blue-600 font-medium">
+                            Click to upload signed contract
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      PDF, DOC, DOCX, JPG, PNG (max 10MB)
+                    </p>
+                  </label>
+                </div>
+              </div>
+
+              {/* View/Download Signed Contract */}
+              {apartment.tenant_contract_path && (
+                <div className="pt-3 border-t border-gray-100">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Signed Contract
+                  </label>
+                  <button
+                    onClick={handleDownloadSignedContract}
+                    className="w-full bg-green-50 border border-green-200 text-green-700 py-3 px-4 rounded-lg font-medium hover:bg-green-100 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>View/Download Signed Contract</span>
+                    <Download className="w-4 h-4 ml-auto" />
+                  </button>
+                  <p className="text-xs text-gray-500 mt-1 text-center">
+                    Contract has been uploaded and is available for download
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

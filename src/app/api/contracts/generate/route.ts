@@ -95,8 +95,8 @@ export async function POST(request: NextRequest) {
       '{{FLOOR_NUMBER}}': apartment.floor_number?.toString() || 'N/A',
       '{{BEDROOMS}}': apartment.bedrooms?.toString() || '',
       '{{BATHROOMS}}': apartment.bathrooms?.toString() || '',
-      '{{RENT_AMOUNT}}': apartment.rent_amount?.toFixed(2) || '',
-      '{{DEPOSIT_AMOUNT}}': apartment.deposit_amount?.toFixed(2) || '',
+      '{{RENT_AMOUNT}}': apartment.rent_amount ? Number(apartment.rent_amount).toFixed(2) : '0.00',
+      '{{DEPOSIT_AMOUNT}}': apartment.deposit_amount ? Number(apartment.deposit_amount).toFixed(2) : '0.00',
       '{{CURRENCY_SYMBOL}}': currencySymbol,
       '{{LEASE_START_DATE}}': apartment.lease_start_date 
         ? new Date(apartment.lease_start_date).toLocaleDateString() 
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
         : '',
       '{{EMERGENCY_CONTACT_NAME}}': apartment.emergency_contact_name || '',
       '{{EMERGENCY_CONTACT_PHONE}}': apartment.emergency_contact_phone || '',
-      '{{WATER_METER_READING}}': apartment.water_meter_reading?.toString() || '0',
+      '{{WATER_METER_READING}}': apartment.water_meter_reading ? Number(apartment.water_meter_reading).toFixed(2) : '0.00',
     };
 
     // Replace all placeholders

@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS apartments (
     tenant_email VARCHAR(100),
     emergency_contact_name VARCHAR(100),
     emergency_contact_phone VARCHAR(20),
-    tenant_id_document_path VARCHAR(255),
-    tenant_contract_path VARCHAR(255),
+    tenant_id_document_path VARCHAR(255), -- Path to uploaded tenant ID/passport document
+    tenant_contract_path VARCHAR(255), -- Path to uploaded signed lease contract (managed in Apartment Details page)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (building_id) REFERENCES buildings(id) ON DELETE CASCADE,
